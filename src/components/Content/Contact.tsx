@@ -225,7 +225,7 @@ const Contact = ({ language }: ContactProps) => {
           <p className="text-gray-200">{t.successSubMessage}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-4 overflow-y-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-4 md:p-6 overflow-y-auto">
           <div className="space-y-6">
             <div className="bg-white/5 p-6 rounded-lg">
               <h3 className="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2">{t.getIntouch}</h3>
@@ -246,7 +246,7 @@ const Contact = ({ language }: ContactProps) => {
 
             <div className="bg-white/5 p-6 rounded-lg">
               <h3 className="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2">{t.socialProfiles}</h3>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-3 justify-center md:justify-start">
                 {t.socialLinks.map((link) => {
                   const Icon = Icons[link.icon as keyof typeof Icons] as ElementType;
                   if (!Icon) return null; // Handle cases where icon name doesn't match

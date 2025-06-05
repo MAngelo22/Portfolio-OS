@@ -187,7 +187,7 @@ const AboutMe = ({ language }: AboutMeProps) => {
             </div>
             <div className="flex items-center space-x-2">
               <Calendar className="w-5 h-5 text-blue-300" />
-              <span className="text-base font-medium">1995</span>
+              <span className="text-base font-medium">1996</span>
             </div>
             <div className="flex items-center space-x-2">
               <GlobeIcon className="w-5 h-5 text-blue-300" />
