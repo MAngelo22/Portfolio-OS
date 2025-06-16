@@ -34,7 +34,7 @@ function App() {
   } as const;
 
   return (
-    <div className="min-h-screen bg-slate-900 overflow-hidden">
+    <div className="min-h-screen bg-slate-900 overflow-y-auto">
       {isLoading ? (
         <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -42,8 +42,12 @@ function App() {
         </div>
       ) : (
         <WindowManagerProvider>
-          <Desktop language={language} />
-          <Taskbar language={language} onLanguageChange={toggleLanguage} />
+          <div className="relative min-h-screen">
+            <Desktop language={language} onLanguageChange={toggleLanguage} />
+            <div className="fixed bottom-0 left-0 right-0 z-50">
+              <Taskbar language={language} onLanguageChange={toggleLanguage} />
+            </div>
+          </div>
         </WindowManagerProvider>
       )}
     </div>

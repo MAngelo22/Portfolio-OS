@@ -36,8 +36,8 @@ const initialWindows: Record<string, WindowData> = {
     isMinimized: false,
     isMaximized: false,
     zIndex: 0,
-    position: { x: 50, y: 50 },
-    size: { width: 600, height: 400 },
+    position: { x: 20, y: 20 },
+    size: { width: window.innerWidth > 768 ? 600 : window.innerWidth - 40, height: window.innerWidth > 768 ? 400 : window.innerHeight - 100 },
     content: 'aboutMe',
     icon: 'User',
   },
@@ -48,8 +48,8 @@ const initialWindows: Record<string, WindowData> = {
     isMinimized: false,
     isMaximized: false,
     zIndex: 0,
-    position: { x: 100, y: 100 },
-    size: { width: 700, height: 500 },
+    position: { x: 40, y: 40 },
+    size: { width: window.innerWidth > 768 ? 700 : window.innerWidth - 40, height: window.innerWidth > 768 ? 500 : window.innerHeight - 100 },
     content: 'projects',
     icon: 'FolderKanban',
   },
@@ -60,8 +60,8 @@ const initialWindows: Record<string, WindowData> = {
     isMinimized: false,
     isMaximized: false,
     zIndex: 0,
-    position: { x: 150, y: 150 },
-    size: { width: 650, height: 450 },
+    position: { x: 60, y: 60 },
+    size: { width: window.innerWidth > 768 ? 650 : window.innerWidth - 40, height: window.innerWidth > 768 ? 450 : window.innerHeight - 100 },
     content: 'experiences',
     icon: 'Briefcase',
   },
@@ -72,8 +72,8 @@ const initialWindows: Record<string, WindowData> = {
     isMinimized: false,
     isMaximized: false,
     zIndex: 0,
-    position: { x: 200, y: 200 },
-    size: { width: 500, height: 400 },
+    position: { x: 80, y: 80 },
+    size: { width: window.innerWidth > 768 ? 500 : window.innerWidth - 40, height: window.innerWidth > 768 ? 400 : window.innerHeight - 100 },
     content: 'languages',
     icon: 'Languages',
   },
@@ -84,8 +84,8 @@ const initialWindows: Record<string, WindowData> = {
     isMinimized: false,
     isMaximized: false,
     zIndex: 0,
-    position: { x: 250, y: 250 },
-    size: { width: 600, height: 450 },
+    position: { x: 100, y: 100 },
+    size: { width: window.innerWidth > 768 ? 600 : window.innerWidth - 40, height: window.innerWidth > 768 ? 450 : window.innerHeight - 100 },
     content: 'studies',
     icon: 'GraduationCap',
   },
@@ -96,8 +96,8 @@ const initialWindows: Record<string, WindowData> = {
     isMinimized: false,
     isMaximized: false,
     zIndex: 0,
-    position: { x: 300, y: 300 },
-    size: { width: 800, height: 600 },
+    position: { x: 120, y: 120 },
+    size: { width: window.innerWidth > 768 ? 800 : window.innerWidth - 40, height: window.innerWidth > 768 ? 600 : window.innerHeight - 100 },
     content: 'games',
     icon: 'Gamepad2',
   },
@@ -108,8 +108,8 @@ const initialWindows: Record<string, WindowData> = {
     isMinimized: false,
     isMaximized: false,
     zIndex: 0,
-    position: { x: 350, y: 150 },
-    size: { width: 500, height: 400 },
+    position: { x: 140, y: 140 },
+    size: { width: window.innerWidth > 768 ? 500 : window.innerWidth - 40, height: window.innerWidth > 768 ? 400 : window.innerHeight - 100 },
     content: 'contact',
     icon: 'Mail',
   },
@@ -125,13 +125,23 @@ export const WindowManagerProvider: React.FC<{ children: ReactNode }> = ({ child
       const newZIndex = highestZIndex + 1;
       setHighestZIndex(newZIndex);
       
+      // Ajustar el tamaño y posición para móvil
+      const isMobile = window.innerWidth <= 768;
+      const position = isMobile ? { x: 20, y: 20 } : prev[id].position;
+      const size = isMobile 
+        ? { width: window.innerWidth - 40, height: window.innerHeight - 100 }
+        : prev[id].size;
+      
       return {
         ...prev,
         [id]: {
           ...prev[id],
           isOpen: true,
           isMinimized: false,
+          isMaximized: isMobile, // Maximizar automáticamente en móvil
           zIndex: newZIndex,
+          position,
+          size,
         },
       };
     });
@@ -229,6 +239,9 @@ export const WindowManagerProvider: React.FC<{ children: ReactNode }> = ({ child
   };
 
   const updateWindowPosition = (id: string, position: { x: number; y: number }) => {
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) return; // No permitir arrastrar en móvil
+
     setWindows((prev) => ({
       ...prev,
       [id]: {
@@ -239,6 +252,9 @@ export const WindowManagerProvider: React.FC<{ children: ReactNode }> = ({ child
   };
 
   const updateWindowSize = (id: string, size: { width: number; height: number }) => {
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) return; // No permitir redimensionar en móvil
+
     setWindows((prev) => ({
       ...prev,
       [id]: {

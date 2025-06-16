@@ -93,45 +93,49 @@ const Window: React.FC<WindowProps> = ({
   return (
     <div
       ref={windowRef}
-      className={`window absolute bg-blue-900 bg-opacity-30 rounded-lg overflow-hidden border border-blue-600 shadow-lg backdrop-blur-md ${isActive ? 'shadow-blue-500/50' : ''}`}
+      className={`window fixed md:absolute bg-blue-900 bg-opacity-30 rounded-lg overflow-hidden border border-blue-600 shadow-lg backdrop-blur-md ${isActive ? 'shadow-blue-500/50' : ''}`}
       style={{
         left: isMaximized ? 0 : `${position.x}px`,
         top: isMaximized ? 0 : `${position.y}px`,
         width: isMaximized ? '100%' : `${size.width}px`,
-        height: isMaximized ? '100%' : `${size.height}px`,
+        height: isMaximized ? 'calc(100% - 48px)' : `${size.height}px`,
         zIndex,
+        maxWidth: '100vw',
+        maxHeight: 'calc(100vh - 48px)',
       }}
       onMouseDown={handleMouseDown}
     >
       <div
         ref={headerRef}
-        className="window-header flex items-center justify-between px-4 py-2 bg-blue-800 bg-opacity-50 text-white border-b border-blue-600 cursor-grab"
+        className="window-header flex items-center justify-between px-2 md:px-4 py-1.5 md:py-2 bg-blue-800 bg-opacity-50 text-white border-b border-blue-600 cursor-grab"
         onDoubleClick={handleDoubleClick}
       >
-        <h3 className="text-sm font-medium truncate text-blue-200">{title}</h3>
-        <div className="flex space-x-2">
+        <h3 className="text-xs md:text-sm font-medium truncate text-blue-200">{title}</h3>
+        <div className="flex space-x-1 md:space-x-2">
           <button
-            className="p-1 hover:bg-blue-700/50 rounded-full transition-colors"
+            className="p-0.5 md:p-1 hover:bg-blue-700/50 rounded-full transition-colors"
             onClick={() => minimizeWindow(id)}
           >
-            <Minus className="w-4 h-4 text-blue-200" />
+            <Minus className="w-3 h-3 md:w-4 md:h-4 text-blue-200" />
           </button>
           <button
-            className="p-1 hover:bg-blue-700/50 rounded-full transition-colors"
+            className="p-0.5 md:p-1 hover:bg-blue-700/50 rounded-full transition-colors"
             onClick={() => isMaximized ? restoreWindow(id) : maximizeWindow(id)}
           >
-            {isMaximized ? <Minimize className="w-4 h-4 text-blue-200" /> : <Maximize className="w-4 h-4 text-blue-200" />}
+            {isMaximized ? <Minimize className="w-3 h-3 md:w-4 md:h-4 text-blue-200" /> : <Maximize className="w-3 h-3 md:w-4 md:h-4 text-blue-200" />}
           </button>
           <button
-            className="p-1 hover:bg-red-600/50 rounded-full transition-colors"
+            className="p-0.5 md:p-1 hover:bg-red-600/50 rounded-full transition-colors"
             onClick={() => closeWindow(id)}
           >
-            <X className="w-4 h-4 text-blue-200" />
+            <X className="w-3 h-3 md:w-4 md:h-4 text-blue-200" />
           </button>
         </div>
       </div>
-      <div className="window-content p-4 h-[calc(100%-40px)] overflow-auto bg-gray-900 bg-opacity-20 text-gray-200">
-        {children}
+      <div className="window-content p-2 md:p-4 h-[calc(100%-32px)] md:h-[calc(100%-40px)] overflow-y-auto bg-gray-900 bg-opacity-20 text-gray-200">
+        <div className="min-h-full">
+          {children}
+        </div>
       </div>
     </div>
   );

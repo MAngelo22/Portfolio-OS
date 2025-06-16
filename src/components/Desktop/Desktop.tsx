@@ -85,7 +85,7 @@ const Desktop = ({ language, onLanguageChange }: DesktopProps) => {
 
   return (
     <div 
-      className="relative w-full h-screen"
+      className="relative w-full min-h-screen pb-16 md:pb-0"
       onContextMenu={handleContextMenu}
       onClick={handleClick}
     >
@@ -93,9 +93,9 @@ const Desktop = ({ language, onLanguageChange }: DesktopProps) => {
       <JarvisBackground />
 
       {/* Desktop Content (Icons, Windows, Taskbar) */}
-      <div className="absolute inset-0 z-10">
-        <div className="p-4 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-4">
-          <div className="flex flex-col space-y-6 mt-4">
+      <div className="absolute inset-0 z-10 overflow-y-auto">
+        <div className="p-2 md:p-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12 gap-2 md:gap-4">
+          <div className="flex flex-col space-y-2 md:space-y-6 mt-2 md:mt-4">
             <DesktopIcon
               id="aboutMe"
               icon="User"
