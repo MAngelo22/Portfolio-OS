@@ -85,7 +85,7 @@ const Desktop = ({ language, onLanguageChange }: DesktopProps) => {
 
   return (
     <div 
-      className="relative w-full min-h-screen pb-16 md:pb-0"
+      className="relative w-full min-h-screen pb-20 md:pb-0"
       onContextMenu={handleContextMenu}
       onClick={handleClick}
     >
@@ -95,7 +95,7 @@ const Desktop = ({ language, onLanguageChange }: DesktopProps) => {
       {/* Desktop Content (Icons, Windows, Taskbar) */}
       <div className="absolute inset-0 z-10 overflow-y-auto">
         <div className="p-2 md:p-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12 gap-2 md:gap-4">
-          <div className="flex flex-col space-y-2 md:space-y-6 mt-2 md:mt-4">
+          <div className="flex flex-col space-y-2 md:space-y-6 mt-2 md:mt-4 mb-16 md:mb-0">
             <DesktopIcon
               id="aboutMe"
               icon="User"
