@@ -75,7 +75,7 @@ const Contact = ({ language }: ContactProps) => {
       successMessage: "¡Mensaje enviado con éxito!",
       successSubMessage: "Gracias por contactarme. Te responderé tan pronto como sea posible.",
       contactInfo: {
-        email: "miguelangel.developer@gmail.com",
+        email: "miguelangelnunez.developer@gmail.com",
         phone: "+X (XXX) XXX-XXXX", // Placeholder
         website: "www.yourwebsite.com", // Placeholder
       },
@@ -139,7 +139,7 @@ const Contact = ({ language }: ContactProps) => {
       successMessage: "Message sent successfully!",
       successSubMessage: "Thank you for reaching out. I'll get back to you as soon as possible.",
       contactInfo: {
-        email: "miguelangel.developer@gmail.com",
+        email: "miguelangelnunez.developer@gmail.com",
         phone: "+X (XXX) XXX-XXXX", // Placeholder
         website: "www.yourwebsite.com", // Placeholder
       },
