@@ -1,5 +1,5 @@
 ﻿import { useState } from 'react';
-import { Mail, Send, Linkedin, Github, Globe, PhoneCall, Codesandbox, Pi } from 'lucide-react';
+import { Mail, Send, Linkedin, Github, Globe, PhoneCall, Codesandbox, Pi, AlertCircle, CheckCircle2 } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { ElementType } from 'react';
 
@@ -36,7 +36,9 @@ interface Translations {
   sendingButton: string;
   successMessage: string;
   successSubMessage: string;
-  mailClientHint: string;
+  configError: string;
+  genericError: string;
+  fallbackHint: string;
   contactInfo: {
     email: string;
     phone: string;
@@ -54,6 +56,7 @@ const Contact = ({ language }: ContactProps) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const translations: Record<'es' | 'en', Translations> = {
     es: {
@@ -75,10 +78,12 @@ const Contact = ({ language }: ContactProps) => {
       formMessageLabel: 'Mensaje',
       formMessagePlaceholder: 'Hola, me gustaria hablar sobre...',
       submitButton: 'Enviar mensaje',
-      sendingButton: 'Abriendo correo...',
-      successMessage: 'Correo preparado correctamente',
-      successSubMessage: 'Se abrio tu cliente de correo con el mensaje listo para enviar.',
-      mailClientHint: 'Nota: el envio se completa desde tu aplicacion de correo.',
+      sendingButton: 'Enviando...',
+      successMessage: 'Mensaje enviado correctamente',
+      successSubMessage: 'Gracias por contactar. Te respondere lo antes posible.',
+      configError: 'Falta configurar VITE_FORMSPREE_ENDPOINT en el entorno.',
+      genericError: 'No se pudo enviar el mensaje. Intentalo de nuevo.',
+      fallbackHint: 'Si falla el envio web, puedes escribirme directo a:',
       contactInfo: {
         email: 'miguelangel.developer@gmail.com',
         phone: '+34 XXX XXX XXX',
@@ -111,10 +116,12 @@ const Contact = ({ language }: ContactProps) => {
       formMessageLabel: 'Message',
       formMessagePlaceholder: 'Hi, I would like to discuss...',
       submitButton: 'Send message',
-      sendingButton: 'Opening email...',
-      successMessage: 'Email draft created successfully',
-      successSubMessage: 'Your email app opened with the message prefilled.',
-      mailClientHint: 'Note: final sending is completed from your email app.',
+      sendingButton: 'Sending...',
+      successMessage: 'Message sent successfully',
+      successSubMessage: 'Thanks for reaching out. I will reply as soon as possible.',
+      configError: 'Missing VITE_FORMSPREE_ENDPOINT in environment config.',
+      genericError: 'Could not send the message. Please try again.',
+      fallbackHint: 'If web sending fails, contact me directly at:',
       contactInfo: {
         email: 'miguelangel.developer@gmail.com',
         phone: '+34 XXX XXX XXX',
@@ -137,24 +144,46 @@ const Contact = ({ language }: ContactProps) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitError(null);
 
-    const subject = encodeURIComponent(formData.subject || 'Nuevo mensaje desde portfolio');
-    const body = encodeURIComponent(
-      `Nombre: ${formData.name}\nEmail: ${formData.email}\n\n${formData.message}`
-    );
-    const mailtoUrl = `mailto:${t.contactInfo.email}?subject=${subject}&body=${body}`;
+    const endpoint = import.meta.env.VITE_FORMSPREE_ENDPOINT;
 
-    window.location.href = mailtoUrl;
-
-    window.setTimeout(() => {
+    if (!endpoint) {
+      setSubmitError(t.configError);
       setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Request failed');
+      }
+
       setIsSubmitted(true);
       setFormData({ name: '', email: '', subject: '', message: '' });
       window.setTimeout(() => setIsSubmitted(false), 5000);
-    }, 300);
+    } catch {
+      setSubmitError(t.genericError);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -228,15 +257,27 @@ const Contact = ({ language }: ContactProps) => {
           <section className="bg-slate-800/90 border border-slate-700 rounded-lg p-4">
             <h3 className="text-lg md:text-xl font-semibold text-white mb-3">{t.sendMessageTitle}</h3>
 
-            {isSubmitted ? (
+            {isSubmitted && (
               <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 mb-4">
                 <div className="flex items-center gap-2 text-emerald-300 font-medium">
-                  <Send className="w-4 h-4" />
+                  <CheckCircle2 className="w-4 h-4" />
                   {t.successMessage}
                 </div>
                 <p className="text-sm text-emerald-100 mt-1">{t.successSubMessage}</p>
               </div>
-            ) : null}
+            )}
+
+            {submitError && (
+              <div className="rounded-md border border-red-500/40 bg-red-500/10 p-3 mb-4">
+                <div className="flex items-center gap-2 text-red-300 font-medium">
+                  <AlertCircle className="w-4 h-4" />
+                  {submitError}
+                </div>
+                <p className="text-xs text-red-100 mt-1">
+                  {t.fallbackHint} <a href={`mailto:${t.contactInfo.email}`} className="underline">{t.contactInfo.email}</a>
+                </p>
+              </div>
+            )}
 
             <form className="space-y-3" onSubmit={handleSubmit}>
               <div>
@@ -314,8 +355,6 @@ const Contact = ({ language }: ContactProps) => {
                 {isSubmitting ? t.sendingButton : t.submitButton}
               </button>
             </form>
-
-            <p className="text-xs text-slate-400 mt-3">{t.mailClientHint}</p>
           </section>
         </div>
       </div>

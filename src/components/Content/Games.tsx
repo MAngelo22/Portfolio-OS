@@ -436,10 +436,20 @@ interface Card {
   faceUp: boolean;
 }
 
-interface SelectedCard {
+interface DragPayload {
   source: 'waste' | 'tableau';
   pileIndex?: number;
   cardIndex?: number;
+}
+
+interface FallingCard {
+  id: number;
+  left: number;
+  delay: number;
+  duration: number;
+  rotate: number;
+  symbol: string;
+  color: string;
 }
 
 const SUITS: Suit[] = ['spades', 'clubs', 'diamonds', 'hearts'];
@@ -536,18 +546,40 @@ const cardClass = (card: Card) =>
 
 const SolitaireGame = () => {
   const [state, setState] = useState(initializeSolitaire);
-  const [selected, setSelected] = useState<SelectedCard | null>(null);
+  const [dragSource, setDragSource] = useState<DragPayload | null>(null);
+  const [fallingCards, setFallingCards] = useState<FallingCard[]>([]);
 
   const wasteTop = state.waste[state.waste.length - 1];
   const foundationsDone = Object.values(state.foundations).every((pile) => pile.length === 13);
 
+  useEffect(() => {
+    if (!foundationsDone) {
+      setFallingCards([]);
+      return;
+    }
+
+    const symbols = ['\u2660', '\u2663', '\u2666', '\u2665'];
+    const colors = ['#1f2937', '#0f766e', '#dc2626', '#7c3aed'];
+    const burst = Array.from({ length: 42 }).map((_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 2.2,
+      duration: 2.2 + Math.random() * 1.8,
+      rotate: -80 + Math.random() * 160,
+      symbol: symbols[Math.floor(Math.random() * symbols.length)],
+      color: colors[Math.floor(Math.random() * colors.length)],
+    }));
+    setFallingCards(burst);
+  }, [foundationsDone]);
+
   const reset = () => {
     setState(initializeSolitaire());
-    setSelected(null);
+    setDragSource(null);
+    setFallingCards([]);
   };
 
   const drawFromStock = () => {
-    setSelected(null);
+    setDragSource(null);
     setState((prev) => {
       if (prev.stock.length === 0) {
         if (prev.waste.length === 0) {
@@ -575,90 +607,57 @@ const SolitaireGame = () => {
     });
   };
 
-  const moveSelectionToFoundation = (suit: Suit) => {
-    if (!selected) {
-      return;
+  const isValidTableauSequence = (pile: Card[], startIndex: number) => {
+    const sequence = pile.slice(startIndex);
+    if (sequence.length === 0 || !sequence[0].faceUp) {
+      return false;
     }
-
-    setState((prev) => {
-      const foundationPile = prev.foundations[suit];
-
-      if (selected.source === 'waste') {
-        const card = prev.waste[prev.waste.length - 1];
-        if (!card || card.suit !== suit || !canMoveToFoundation(card, foundationPile)) {
-          return prev;
-        }
-
-        return {
-          ...prev,
-          waste: prev.waste.slice(0, -1),
-          foundations: {
-            ...prev.foundations,
-            [suit]: [...foundationPile, card],
-          },
-        };
+    for (let i = 1; i < sequence.length; i += 1) {
+      const prev = sequence[i - 1];
+      const current = sequence[i];
+      if (!current.faceUp) {
+        return false;
       }
-
-      const pileIndex = selected.pileIndex;
-      const cardIndex = selected.cardIndex;
-      if (pileIndex === undefined || cardIndex === undefined) {
-        return prev;
+      if (isRed(prev.suit) === isRed(current.suit)) {
+        return false;
       }
-
-      const pile = prev.tableau[pileIndex];
-      const movingStack = pile.slice(cardIndex);
-      if (movingStack.length !== 1 || !movingStack[0].faceUp) {
-        return prev;
+      if (prev.rank !== current.rank + 1) {
+        return false;
       }
-
-      const card = movingStack[0];
-      if (card.suit !== suit || !canMoveToFoundation(card, foundationPile)) {
-        return prev;
-      }
-
-      const nextTableau = prev.tableau.map((current, index) => {
-        if (index !== pileIndex) {
-          return current;
-        }
-
-        const nextPile = current.slice(0, cardIndex);
-        if (nextPile.length > 0) {
-          nextPile[nextPile.length - 1] = { ...nextPile[nextPile.length - 1], faceUp: true };
-        }
-        return nextPile;
-      });
-
-      return {
-        ...prev,
-        tableau: nextTableau,
-        foundations: {
-          ...prev.foundations,
-          [suit]: [...foundationPile, card],
-        },
-      };
-    });
-
-    setSelected(null);
+    }
+    return true;
   };
 
-  const moveSelectionToTableau = (targetPileIndex: number) => {
-    if (!selected) {
-      return;
+  const getPayloadFromDrag = (event: React.DragEvent): DragPayload | null => {
+    const raw = event.dataTransfer.getData('text/plain');
+    if (!raw) {
+      return dragSource;
     }
+    try {
+      return JSON.parse(raw) as DragPayload;
+    } catch {
+      return dragSource;
+    }
+  };
 
+  const beginDrag = (payload: DragPayload) => (event: React.DragEvent) => {
+    setDragSource(payload);
+    event.dataTransfer.setData('text/plain', JSON.stringify(payload));
+    event.dataTransfer.effectAllowed = 'move';
+  };
+
+  const movePayloadToTableau = (payload: DragPayload, targetPileIndex: number) => {
     setState((prev) => {
       const targetPile = prev.tableau[targetPileIndex];
 
-      if (selected.source === 'waste') {
+      if (payload.source === 'waste') {
         const card = prev.waste[prev.waste.length - 1];
         if (!card || !canMoveToTableau(card, targetPile)) {
           return prev;
         }
-
         const nextTableau = prev.tableau.map((pile, index) =>
           index === targetPileIndex ? [...pile, card] : pile
         );
-
         return {
           ...prev,
           waste: prev.waste.slice(0, -1),
@@ -666,8 +665,8 @@ const SolitaireGame = () => {
         };
       }
 
-      const fromPileIndex = selected.pileIndex;
-      const cardIndex = selected.cardIndex;
+      const fromPileIndex = payload.pileIndex;
+      const cardIndex = payload.cardIndex;
       if (fromPileIndex === undefined || cardIndex === undefined) {
         return prev;
       }
@@ -676,10 +675,12 @@ const SolitaireGame = () => {
       }
 
       const sourcePile = prev.tableau[fromPileIndex];
+      if (!isValidTableauSequence(sourcePile, cardIndex)) {
+        return prev;
+      }
       const movingStack = sourcePile.slice(cardIndex);
       const movingCard = movingStack[0];
-
-      if (!movingCard || !movingCard.faceUp || !canMoveToTableau(movingCard, targetPile)) {
+      if (!movingCard || !canMoveToTableau(movingCard, targetPile)) {
         return prev;
       }
 
@@ -697,41 +698,102 @@ const SolitaireGame = () => {
         return pile;
       });
 
+      return { ...prev, tableau: nextTableau };
+    });
+    setDragSource(null);
+  };
+
+  const movePayloadToFoundation = (payload: DragPayload, suit: Suit) => {
+    setState((prev) => {
+      const foundationPile = prev.foundations[suit];
+
+      if (payload.source === 'waste') {
+        const card = prev.waste[prev.waste.length - 1];
+        if (!card || card.suit !== suit || !canMoveToFoundation(card, foundationPile)) {
+          return prev;
+        }
+        return {
+          ...prev,
+          waste: prev.waste.slice(0, -1),
+          foundations: {
+            ...prev.foundations,
+            [suit]: [...foundationPile, card],
+          },
+        };
+      }
+
+      const fromPileIndex = payload.pileIndex;
+      const cardIndex = payload.cardIndex;
+      if (fromPileIndex === undefined || cardIndex === undefined) {
+        return prev;
+      }
+
+      const sourcePile = prev.tableau[fromPileIndex];
+      const movingStack = sourcePile.slice(cardIndex);
+      if (movingStack.length !== 1 || !movingStack[0].faceUp) {
+        return prev;
+      }
+
+      const card = movingStack[0];
+      if (card.suit !== suit || !canMoveToFoundation(card, foundationPile)) {
+        return prev;
+      }
+
+      const nextTableau = prev.tableau.map((pile, index) => {
+        if (index !== fromPileIndex) {
+          return pile;
+        }
+        const reduced = pile.slice(0, cardIndex);
+        if (reduced.length > 0) {
+          reduced[reduced.length - 1] = { ...reduced[reduced.length - 1], faceUp: true };
+        }
+        return reduced;
+      });
+
       return {
         ...prev,
         tableau: nextTableau,
+        foundations: {
+          ...prev.foundations,
+          [suit]: [...foundationPile, card],
+        },
       };
     });
-
-    setSelected(null);
+    setDragSource(null);
   };
 
   const autoMoveWasteToFoundation = () => {
     if (!wasteTop) {
       return;
     }
-    const foundation = state.foundations[wasteTop.suit];
-    if (!canMoveToFoundation(wasteTop, foundation)) {
-      return;
-    }
-
-    setState((prev) => ({
-      ...prev,
-      waste: prev.waste.slice(0, -1),
-      foundations: {
-        ...prev.foundations,
-        [wasteTop.suit]: [...prev.foundations[wasteTop.suit], wasteTop],
-      },
-    }));
-    setSelected(null);
+    movePayloadToFoundation({ source: 'waste' }, wasteTop.suit);
   };
 
   return (
-    <div className="h-full flex flex-col gap-4">
+    <div className="h-full flex flex-col gap-4 relative overflow-hidden">
+      {foundationsDone && fallingCards.length > 0 && (
+        <div className="absolute inset-0 pointer-events-none z-20">
+          {fallingCards.map((card) => (
+            <div
+              key={card.id}
+              className="solitaire-fall-card absolute top-[-60px] text-2xl font-bold"
+              style={{
+                left: `${card.left}%`,
+                color: card.color,
+                transform: `rotate(${card.rotate}deg)`,
+                animationDelay: `${card.delay}s`,
+                animationDuration: `${card.duration}s`,
+              }}
+            >
+              {card.symbol}
+            </div>
+          ))}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-xl font-bold text-gray-800">Solitario</h3>
-          <p className="text-sm text-gray-600">Klondike simplificado con movimientos por clic.</p>
+          <p className="text-sm text-gray-600">Arrastra cartas y suelta en columnas/fundaciones (reglas clasicas).</p>
         </div>
         <button
           className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"
@@ -757,11 +819,13 @@ const SolitaireGame = () => {
             <button
               type="button"
               className={`w-16 h-20 rounded border border-white/40 text-xs ${
-                selected?.source === 'waste' ? 'ring-2 ring-yellow-300' : ''
+                dragSource?.source === 'waste' ? 'ring-2 ring-yellow-300' : ''
               } ${wasteTop ? 'bg-white text-black' : 'bg-green-900/40 text-white/70'}`}
-              onClick={() => wasteTop && setSelected({ source: 'waste' })}
               onDoubleClick={autoMoveWasteToFoundation}
               disabled={!wasteTop}
+              draggable={Boolean(wasteTop)}
+              onDragStart={beginDrag({ source: 'waste' })}
+              onDragEnd={() => setDragSource(null)}
               title="Descarte (doble clic para mandar a fundación)"
             >
               {wasteTop ? `${rankLabel(wasteTop.rank)}${suitLabel(wasteTop.suit)}` : 'Waste'}
@@ -778,7 +842,17 @@ const SolitaireGame = () => {
                   key={suit}
                   type="button"
                   className="w-16 h-20 rounded border border-white/40 bg-green-900/40 hover:bg-green-900/60 flex flex-col items-center justify-center text-xs"
-                  onClick={() => moveSelectionToFoundation(suit)}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = 'move';
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    const payload = getPayloadFromDrag(event);
+                    if (payload) {
+                      movePayloadToFoundation(payload, suit);
+                    }
+                  }}
                   title="Mover carta seleccionada"
                 >
                   {top ? (
@@ -801,7 +875,17 @@ const SolitaireGame = () => {
             <div
               key={pileIndex}
               className="relative h-[360px] bg-green-100 rounded-md p-2"
-              onClick={() => moveSelectionToTableau(pileIndex)}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                const payload = getPayloadFromDrag(event);
+                if (payload) {
+                  movePayloadToTableau(payload, pileIndex);
+                }
+              }}
               title="Mover selección a esta columna"
             >
               {pile.length === 0 ? (
@@ -819,24 +903,16 @@ const SolitaireGame = () => {
                       key={card.id}
                       type="button"
                       className={`${cardClass(card)} absolute left-2 ${
-                        selected?.source === 'tableau' &&
-                        selected.pileIndex === pileIndex &&
-                        selected.cardIndex === cardIndex
+                        dragSource?.source === 'tableau' &&
+                        dragSource.pileIndex === pileIndex &&
+                        dragSource.cardIndex === cardIndex
                           ? 'ring-2 ring-yellow-400'
                           : ''
                       }`}
                       style={{ top: `${cardIndex * 24}px`, zIndex: cardIndex + 1 }}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        if (!card.faceUp || !selectable) {
-                          return;
-                        }
-                        setSelected({
-                          source: 'tableau',
-                          pileIndex,
-                          cardIndex,
-                        });
-                      }}
+                      draggable={card.faceUp && selectable && isValidTableauSequence(pile, cardIndex)}
+                      onDragStart={beginDrag({ source: 'tableau', pileIndex, cardIndex })}
+                      onDragEnd={() => setDragSource(null)}
                     >
                       {card.faceUp ? (
                         <>
@@ -857,8 +933,8 @@ const SolitaireGame = () => {
 
       <p className="text-sm text-gray-600">
         {foundationsDone
-          ? 'Ganaste la partida.'
-          : 'Selecciona una carta (waste o columna) y luego el destino. Se permite mover pilas en columnas.'}
+          ? 'Ganaste la partida. Celebracion activada.'
+          : 'Puedes arrastrar desde waste o columnas. Doble clic en waste envia a fundacion si es valido.'}
       </p>
     </div>
   );

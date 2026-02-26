@@ -33,3 +33,23 @@
 .inactive-window {
   z-index: 10;
 }
+
+@keyframes solitaireFall {
+  0% {
+    opacity: 0;
+    transform: translateY(-80px) rotate(0deg);
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.95;
+    transform: translateY(120vh) rotate(540deg);
+  }
+}
+
+.solitaire-fall-card {
+  animation-name: solitaireFall;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
