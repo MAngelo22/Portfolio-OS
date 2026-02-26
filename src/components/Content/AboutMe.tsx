@@ -143,13 +143,13 @@ const AboutMe = ({ language }: AboutMeProps) => {
   };
 
   return (
-    <div className="h-full min-h-0 flex flex-col">
+    <div className="h-full flex flex-col">
       <div className="bg-blue-600 text-white px-4 py-3 rounded-t-lg">
         <h2 className="text-xl md:text-2xl font-bold">{t.title}</h2>
       </div>
 
-      <div className="flex-1 min-h-0 p-3 md:p-4 overflow-y-auto">
-        <div className="grid grid-cols-1 xl:grid-cols-[280px_minmax(0,1fr)] gap-4 h-full">
+      <div className="flex-1 p-3 md:p-4 overflow-y-auto">
+        <div className="grid grid-cols-1 xl:grid-cols-[280px_minmax(0,1fr)] gap-4 items-start">
           <section className="bg-slate-800/90 rounded-lg border border-slate-700 p-4">
             <div className="flex xl:flex-col items-center xl:items-start gap-4">
               <div className="w-20 h-20 md:w-24 md:h-24 overflow-hidden rounded-full border-2 border-blue-400 shrink-0">
@@ -186,7 +186,7 @@ const AboutMe = ({ language }: AboutMeProps) => {
             </div>
           </section>
 
-          <section className="bg-slate-800/90 rounded-lg border border-slate-700 p-4 overflow-hidden">
+          <section className="bg-slate-800/90 rounded-lg border border-slate-700 p-4">
             <div className="space-y-5">
               <div>
                 <h4 className="text-lg font-semibold text-white border-b border-blue-300/40 pb-1.5 mb-2">{t.biography}</h4>
