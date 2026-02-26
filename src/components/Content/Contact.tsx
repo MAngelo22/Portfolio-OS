@@ -1,15 +1,23 @@
-import { useState } from 'react';
-import { Mail, Send, Linkedin, Github, Twitter, Globe, PhoneCall, Codesandbox, Pi } from 'lucide-react';
-import * as Icons from 'lucide-react'; // Import Icons object
+﻿import { useState } from 'react';
+import { Mail, Send, Linkedin, Github, Globe, PhoneCall, Codesandbox, Pi } from 'lucide-react';
+import * as Icons from 'lucide-react';
 import { ElementType } from 'react';
 
 interface ContactProps {
   language: 'es' | 'en';
 }
 
+interface SocialLink {
+  id: number;
+  icon: string;
+  href: string;
+  label: string;
+  color: string;
+}
+
 interface Translations {
   title: string;
-  getIntouch: string;
+  getInTouch: string;
   description: string;
   emailLabel: string;
   phoneLabel: string;
@@ -28,18 +36,13 @@ interface Translations {
   sendingButton: string;
   successMessage: string;
   successSubMessage: string;
+  mailClientHint: string;
   contactInfo: {
     email: string;
-    phone: string; // Placeholder
-    website: string; // Placeholder
+    phone: string;
+    website: string;
   };
-  socialLinks: {
-    id: number;
-    icon: string; // Using string to represent icon name from LucideReact
-    href: string;
-    label: string;
-    color: string; // Tailwind color class suffix
-  }[];
+  socialLinks: SocialLink[];
 }
 
 const Contact = ({ language }: ContactProps) => {
@@ -47,138 +50,82 @@ const Contact = ({ language }: ContactProps) => {
     name: '',
     email: '',
     subject: '',
-    message: ''
+    message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const translations: Record<'es' | 'en', Translations> = {
     es: {
-      title: "Contacto",
-      getIntouch: "Ponte en Contacto",
-      description: "¡No dudes en contactarme si tienes alguna pregunta, ideas de proyectos, o simplemente quieres conectar! Estoy siempre abierto a discutir nuevos proyectos y oportunidades.",
-      emailLabel: "Email",
-      phoneLabel: "Teléfono",
-      websiteLabel: "Sitio Web",
-      socialProfiles: "Perfiles Sociales",
-      sendMessageTitle: "Envíame un Mensaje",
-      formNameLabel: "Tu Nombre",
-      formNamePlaceholder: "Tu Nombre",
-      formEmailLabel: "Correo Electrónico",
-      formEmailPlaceholder: "tu.email@ejemplo.com",
-      formSubjectLabel: "Asunto",
-      formSubjectPlaceholder: "Consulta sobre Proyecto",
-      formMessageLabel: "Mensaje",
-      formMessagePlaceholder: "Hola, me gustaría discutir un proyecto...",
-      submitButton: "Enviar Mensaje",
-      sendingButton: "Enviando...",
-      successMessage: "¡Mensaje enviado con éxito!",
-      successSubMessage: "Gracias por contactarme. Te responderé tan pronto como sea posible.",
+      title: 'Contacto',
+      getInTouch: 'Ponte en contacto',
+      description:
+        'Si tienes una propuesta, colaboracion o una vacante, escribeme. Respondo rapido y puedo adaptarme al proyecto.',
+      emailLabel: 'Email',
+      phoneLabel: 'Telefono',
+      websiteLabel: 'Sitio web',
+      socialProfiles: 'Perfiles',
+      sendMessageTitle: 'Enviame un mensaje',
+      formNameLabel: 'Tu nombre',
+      formNamePlaceholder: 'Tu nombre',
+      formEmailLabel: 'Tu email',
+      formEmailPlaceholder: 'tu.email@ejemplo.com',
+      formSubjectLabel: 'Asunto',
+      formSubjectPlaceholder: 'Consulta de proyecto',
+      formMessageLabel: 'Mensaje',
+      formMessagePlaceholder: 'Hola, me gustaria hablar sobre...',
+      submitButton: 'Enviar mensaje',
+      sendingButton: 'Abriendo correo...',
+      successMessage: 'Correo preparado correctamente',
+      successSubMessage: 'Se abrio tu cliente de correo con el mensaje listo para enviar.',
+      mailClientHint: 'Nota: el envio se completa desde tu aplicacion de correo.',
       contactInfo: {
-        email: "miguelangel.developer@gmail.com",
-        phone: "+X (XXX) XXX-XXXX", // Placeholder
-        website: "www.yourwebsite.com", // Placeholder
+        email: 'miguelangel.developer@gmail.com',
+        phone: '+34 XXX XXX XXX',
+        website: 'https://manl3d.netlify.app/',
       },
       socialLinks: [
-        {
-          id: 1,
-          icon: "Codesandbox",
-          href: 'https://manl3d.netlify.app/',
-          label: 'Web 3D',
-          color: 'hover:bg-violet-300'
-        },
-        {
-          id: 2,
-          icon: "Pi",
-          href: 'https://mantrix.netlify.app/',
-          label: 'Web 3D',
-          color: 'hover:bg-lime-500'
-        },
-        {
-          id: 3,
-          icon: "Mail",
-          href: 'mailto:miguelangel.developer@gmail.com',
-          label: 'Email',
-          color: 'hover:bg-red-500'
-        },
-        {
-          id: 4,
-          icon: "Linkedin",
-          href: 'https://www.linkedin.com/in/miguelangelnunezlopez/',
-          label: 'LinkedIn',
-          color: 'hover:bg-blue-600'
-        },
-        {
-          id: 5,
-          icon: "Github",
-          href: 'https://github.com/MAngelo22',
-          label: 'GitHub',
-          color: 'hover:bg-gray-600'
-        }
+        { id: 1, icon: 'Codesandbox', href: 'https://manl3d.netlify.app/', label: 'Web 3D', color: 'hover:bg-violet-500' },
+        { id: 2, icon: 'Pi', href: 'https://mantrix.netlify.app/', label: 'Web IA', color: 'hover:bg-lime-500' },
+        { id: 3, icon: 'Mail', href: 'mailto:miguelangel.developer@gmail.com', label: 'Email', color: 'hover:bg-red-500' },
+        { id: 4, icon: 'Linkedin', href: 'https://www.linkedin.com/in/miguelangelnunezlopez/', label: 'LinkedIn', color: 'hover:bg-blue-600' },
+        { id: 5, icon: 'Github', href: 'https://github.com/MAngelo22', label: 'GitHub', color: 'hover:bg-gray-600' },
       ],
     },
     en: {
-      title: "Contact",
-      getIntouch: "Get in Touch",
-      description: "Feel free to reach out if you have any questions, project ideas, or just want to connect! I'm always open to discussing new projects and opportunities.",
-      emailLabel: "Email",
-      phoneLabel: "Phone",
-      websiteLabel: "Website",
-      socialProfiles: "Social Profiles",
-      sendMessageTitle: "Send Me a Message",
-      formNameLabel: "Your Name",
-      formNamePlaceholder: "John Doe",
-      formEmailLabel: "Email Address",
-      formEmailPlaceholder: "john@example.com",
-      formSubjectLabel: "Subject",
-      formSubjectPlaceholder: "Project Inquiry",
-      formMessageLabel: "Message",
-      formMessagePlaceholder: "Hello, I'd like to discuss a project...",
-      submitButton: "Send Message",
-      sendingButton: "Sending...",
-      successMessage: "Message sent successfully!",
-      successSubMessage: "Thank you for reaching out. I'll get back to you as soon as possible.",
+      title: 'Contact',
+      getInTouch: 'Get in touch',
+      description:
+        'If you have a proposal, collaboration idea, or open role, message me. I reply fast and adapt to project needs.',
+      emailLabel: 'Email',
+      phoneLabel: 'Phone',
+      websiteLabel: 'Website',
+      socialProfiles: 'Profiles',
+      sendMessageTitle: 'Send me a message',
+      formNameLabel: 'Your name',
+      formNamePlaceholder: 'Your name',
+      formEmailLabel: 'Your email',
+      formEmailPlaceholder: 'your.email@example.com',
+      formSubjectLabel: 'Subject',
+      formSubjectPlaceholder: 'Project inquiry',
+      formMessageLabel: 'Message',
+      formMessagePlaceholder: 'Hi, I would like to discuss...',
+      submitButton: 'Send message',
+      sendingButton: 'Opening email...',
+      successMessage: 'Email draft created successfully',
+      successSubMessage: 'Your email app opened with the message prefilled.',
+      mailClientHint: 'Note: final sending is completed from your email app.',
       contactInfo: {
-        email: "miguelangel.developer@gmail.com",
-        phone: "+X (XXX) XXX-XXXX", // Placeholder
-        website: "www.yourwebsite.com", // Placeholder
+        email: 'miguelangel.developer@gmail.com',
+        phone: '+34 XXX XXX XXX',
+        website: 'https://manl3d.netlify.app/',
       },
       socialLinks: [
-         {
-          id: 1,
-          icon: "Codesandbox",
-          href: 'https://manl3d.netlify.app/',
-          label: '3D Web',
-          color: 'hover:bg-violet-300'
-        },
-        {
-          id: 2,
-          icon: "Pi",
-          href: 'https://mantrix.netlify.app/',
-          label: '3D Web',
-          color: 'hover:bg-lime-500'
-        },
-        {
-          id: 3,
-          icon: "Mail",
-          href: 'mailto:miguelangel.developer@gmail.com',
-          label: 'Email',
-          color: 'hover:bg-red-500'
-        },
-        {
-          id: 4,
-          icon: "Linkedin",
-          href: 'https://www.linkedin.com/in/miguelangelnunezlopez/',
-          label: 'LinkedIn',
-          color: 'hover:bg-blue-600'
-        },
-        {
-          id: 5,
-          icon: "Github",
-          href: 'https://github.com/MAngelo22',
-          label: 'GitHub',
-          color: 'hover:bg-gray-600'
-        }
+        { id: 1, icon: 'Codesandbox', href: 'https://manl3d.netlify.app/', label: '3D Web', color: 'hover:bg-violet-500' },
+        { id: 2, icon: 'Pi', href: 'https://mantrix.netlify.app/', label: 'AI Web', color: 'hover:bg-lime-500' },
+        { id: 3, icon: 'Mail', href: 'mailto:miguelangel.developer@gmail.com', label: 'Email', color: 'hover:bg-red-500' },
+        { id: 4, icon: 'Linkedin', href: 'https://www.linkedin.com/in/miguelangelnunezlopez/', label: 'LinkedIn', color: 'hover:bg-blue-600' },
+        { id: 5, icon: 'Github', href: 'https://github.com/MAngelo22', label: 'GitHub', color: 'hover:bg-gray-600' },
       ],
     },
   };
@@ -187,155 +134,191 @@ const Contact = ({ language }: ContactProps) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
-  
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate form submission
-    setTimeout(() => {
+
+    const subject = encodeURIComponent(formData.subject || 'Nuevo mensaje desde portfolio');
+    const body = encodeURIComponent(
+      `Nombre: ${formData.name}\nEmail: ${formData.email}\n\n${formData.message}`
+    );
+    const mailtoUrl = `mailto:${t.contactInfo.email}?subject=${subject}&body=${body}`;
+
+    window.location.href = mailtoUrl;
+
+    window.setTimeout(() => {
       setIsSubmitting(false);
       setIsSubmitted(true);
       setFormData({ name: '', email: '', subject: '', message: '' });
-      
-      // Reset success message after 5 seconds
-      setTimeout(() => {
-        setIsSubmitted(false);
-      }, 5000);
-    }, 1500);
-  };
-
-  const IconComponent = (iconName: string) => {
-    const LucideIcon = Icons[iconName as keyof typeof Icons] as ElementType;
-    return LucideIcon ? <LucideIcon size={24} className="w-6 h-6 text-white" /> : null;
+      window.setTimeout(() => setIsSubmitted(false), 5000);
+    }, 300);
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="bg-blue-600 text-white p-4 rounded-t-lg">
-        <h2 className="text-2xl font-bold">{t.title}</h2>
+    <div className="h-full min-h-0 flex flex-col">
+      <div className="bg-blue-600 text-white px-4 py-3 rounded-t-lg">
+        <h2 className="text-xl md:text-2xl font-bold">{t.title}</h2>
       </div>
-      
-      {isSubmitted ? (
-        <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-          <Send className="w-16 h-16 text-green-500 mb-4" />
-          <h3 className="text-2xl font-bold text-white mb-2">{t.successMessage}</h3>
-          <p className="text-gray-200">{t.successSubMessage}</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-4 md:p-6 overflow-y-auto">
-          <div className="space-y-6">
-            <div className="bg-white/5 p-6 rounded-lg">
-              <h3 className="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2">{t.getIntouch}</h3>
-              <p className="text-gray-200 mb-6">{t.description}</p>
 
-              <div className="space-y-4">
-                <div className="flex items-center text-gray-200">
-                  <Mail className="w-5 h-5 mr-3 text-blue-300" />
+      <div className="flex-1 min-h-0 p-3 md:p-4 overflow-y-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="space-y-4">
+            <section className="bg-slate-800/90 border border-slate-700 rounded-lg p-4">
+              <h3 className="text-lg md:text-xl font-semibold text-white mb-2">{t.getInTouch}</h3>
+              <p className="text-slate-200 text-sm md:text-base mb-4">{t.description}</p>
+
+              <div className="space-y-3 text-sm md:text-base">
+                <div className="flex items-start gap-2 text-slate-100">
+                  <Mail className="w-4 h-4 text-blue-300 mt-1" />
                   <div>
-                    <p className="font-semibold text-white">{t.emailLabel}</p>
-                    <a href={`mailto:${t.contactInfo.email}`} className="text-blue-300 hover:underline">{t.contactInfo.email}</a>
+                    <p className="text-white font-medium">{t.emailLabel}</p>
+                    <a href={`mailto:${t.contactInfo.email}`} className="text-blue-300 hover:underline break-all">
+                      {t.contactInfo.email}
+                    </a>
                   </div>
                 </div>
-                {/* Phone and Website placeholders - keep original colors or adjust minimally if they become real data */}
-                {/* <div className="flex items-center text-gray-200">\n                  <PhoneCall className="w-5 h-5 mr-3 text-blue-300" />\n                  <div>\n                    <p className="font-semibold text-white">{t.phoneLabel}</p>\n                    <span className="text-gray-200">{t.contactInfo.phone}</span>\n                  </div>\n                </div>\n                <div className="flex items-center text-gray-200">\n                  <Globe className="w-5 h-5 mr-3 text-blue-300" />\n                  <div>\n                    <p className="font-semibold text-white">{t.websiteLabel}</p>\n                    <a href={t.contactInfo.website} target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:underline">{t.contactInfo.website}</a>\n                  </div>\n                </div> */}
-              </div>
-            </div>
 
-            <div className="bg-white/5 p-6 rounded-lg">
-              <h3 className="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2">{t.socialProfiles}</h3>
-              <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+                <div className="flex items-start gap-2 text-slate-100">
+                  <PhoneCall className="w-4 h-4 text-blue-300 mt-1" />
+                  <div>
+                    <p className="text-white font-medium">{t.phoneLabel}</p>
+                    <span>{t.contactInfo.phone}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2 text-slate-100">
+                  <Globe className="w-4 h-4 text-blue-300 mt-1" />
+                  <div>
+                    <p className="text-white font-medium">{t.websiteLabel}</p>
+                    <a href={t.contactInfo.website} target="_blank" rel="noreferrer" className="text-blue-300 hover:underline break-all">
+                      {t.contactInfo.website}
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="bg-slate-800/90 border border-slate-700 rounded-lg p-4">
+              <h3 className="text-lg md:text-xl font-semibold text-white mb-3">{t.socialProfiles}</h3>
+              <div className="flex flex-wrap gap-2">
                 {t.socialLinks.map((link) => {
                   const Icon = Icons[link.icon as keyof typeof Icons] as ElementType;
-                  if (!Icon) return null; // Handle cases where icon name doesn't match
+                  if (!Icon) return null;
+
                   return (
                     <a
                       key={link.id}
                       href={link.href}
                       target="_blank"
-                      rel="noopener noreferrer"
-                      className={`flex items-center px-4 py-2 rounded-full bg-gray-700 text-white text-sm font-medium transition-colors duration-200 ${link.color}`}
-                      aria-label={link.label}
+                      rel="noreferrer"
+                      className={`inline-flex items-center gap-2 px-3 py-2 rounded-full bg-slate-700 text-white text-sm transition-colors ${link.color}`}
                     >
-                      <Icon className="w-5 h-5 mr-2" />
+                      <Icon className="w-4 h-4" />
                       {link.label}
                     </a>
                   );
                 })}
               </div>
-            </div>
+            </section>
           </div>
 
-          <div className="bg-white/5 p-6 rounded-lg">
-            <h3 className="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2">{t.sendMessageTitle}</h3>
-            <form className="space-y-4" onSubmit={handleSubmit}>
+          <section className="bg-slate-800/90 border border-slate-700 rounded-lg p-4">
+            <h3 className="text-lg md:text-xl font-semibold text-white mb-3">{t.sendMessageTitle}</h3>
+
+            {isSubmitted ? (
+              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 mb-4">
+                <div className="flex items-center gap-2 text-emerald-300 font-medium">
+                  <Send className="w-4 h-4" />
+                  {t.successMessage}
+                </div>
+                <p className="text-sm text-emerald-100 mt-1">{t.successSubMessage}</p>
+              </div>
+            ) : null}
+
+            <form className="space-y-3" onSubmit={handleSubmit}>
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-200">{t.formNameLabel}</label>
+                <label htmlFor="name" className="block text-sm text-slate-200 mb-1">
+                  {t.formNameLabel}
+                </label>
                 <input
-                  type="text"
                   id="name"
                   name="name"
+                  type="text"
                   value={formData.name}
                   onChange={handleChange}
                   placeholder={t.formNamePlaceholder}
-                  className="mt-1 block w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
+
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-200">{t.formEmailLabel}</label>
+                <label htmlFor="email" className="block text-sm text-slate-200 mb-1">
+                  {t.formEmailLabel}
+                </label>
                 <input
-                  type="email"
                   id="email"
                   name="email"
+                  type="email"
                   value={formData.email}
                   onChange={handleChange}
                   placeholder={t.formEmailPlaceholder}
-                  className="mt-1 block w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
+
               <div>
-                <label htmlFor="subject" className="block text-sm font-medium text-gray-200">{t.formSubjectLabel}</label>
+                <label htmlFor="subject" className="block text-sm text-slate-200 mb-1">
+                  {t.formSubjectLabel}
+                </label>
                 <input
-                  type="text"
                   id="subject"
                   name="subject"
+                  type="text"
                   value={formData.subject}
                   onChange={handleChange}
                   placeholder={t.formSubjectPlaceholder}
-                  className="mt-1 block w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
+
               <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-200">{t.formMessageLabel}</label>
+                <label htmlFor="message" className="block text-sm text-slate-200 mb-1">
+                  {t.formMessageLabel}
+                </label>
                 <textarea
                   id="message"
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
                   placeholder={t.formMessagePlaceholder}
-                  rows={4}
-                  className="mt-1 block w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  rows={5}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
-                ></textarea>
+                />
               </div>
-              <div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'}`}
-                >
-                  {isSubmitting ? t.sendingButton : t.submitButton}
-                </button>
-              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`w-full inline-flex justify-center items-center gap-2 px-4 py-2 rounded-md text-white text-sm font-medium transition-colors ${
+                  isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                <Send className="w-4 h-4" />
+                {isSubmitting ? t.sendingButton : t.submitButton}
+              </button>
             </form>
-          </div>
+
+            <p className="text-xs text-slate-400 mt-3">{t.mailClientHint}</p>
+          </section>
         </div>
-      )}
+      </div>
     </div>
   );
 };

@@ -1,7 +1,7 @@
-import { useWindowManager } from '../../context/WindowManagerContext';
+﻿import { useWindowManager } from '../../context/WindowManagerContext';
 import * as Icons from 'lucide-react';
-import { Clock, Calendar, Languages, LucideIcon } from 'lucide-react';
-import { useState, useEffect, ElementType } from 'react';
+import { Clock, Languages, LucideIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface TaskbarProps {
   language: 'es' | 'en';
@@ -11,72 +11,65 @@ interface TaskbarProps {
 const Taskbar = ({ language, onLanguageChange }: TaskbarProps) => {
   const { windows, openWindow, activeWindowId } = useWindowManager();
   const [currentTime, setCurrentTime] = useState(new Date());
-  
+
   useEffect(() => {
-    const timer = setInterval(() => {
+    const timer = window.setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-    
-    return () => clearInterval(timer);
+
+    return () => window.clearInterval(timer);
   }, []);
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  };
-
-  const openWindows = Object.values(windows).filter(window => window.isOpen);
+  const openWindows = Object.values(windows).filter((windowData) => windowData.isOpen);
 
   return (
-    <div className="fixed bottom-0 left-0 w-full h-12 bg-gray-900 bg-opacity-80 backdrop-blur-md shadow-lg z-50 flex items-center justify-between px-2">
-      <div className="flex items-center space-x-1">
-        <button className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center hover:bg-blue-700 transition-colors">
+    <div className="fixed bottom-0 left-0 w-full h-14 bg-slate-950/75 backdrop-blur-md border-t border-cyan-300/20 z-50 flex items-center justify-between px-2 sm:px-3 gap-2">
+      <div className="flex items-center gap-2 min-w-0">
+        <button
+          type="button"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-cyan-500/80 flex items-center justify-center hover:bg-cyan-500 transition-colors"
+        >
           <Icons.LayoutGrid className="w-5 h-5 text-white" />
         </button>
 
-        <div className="h-10 w-px bg-gray-700 mx-2"></div>
+        <div className="h-8 w-px bg-slate-600" />
 
-        {/* Task buttons */}
-        <div className="flex space-x-1">
-          {openWindows.map(window => {
-            const IconComponent = Icons[window.icon as keyof typeof Icons] as LucideIcon;
-            const isActive = window.id === activeWindowId;
-            
+        <div className="flex items-center gap-1 overflow-x-auto max-w-[48vw] sm:max-w-[60vw] pb-1">
+          {openWindows.map((windowData) => {
+            const IconComponent = Icons[windowData.icon as keyof typeof Icons] as LucideIcon;
+            const isActive = windowData.id === activeWindowId;
+
             return (
               <button
-                key={window.id}
-                className={`h-10 px-3 rounded flex items-center space-x-2 transition-colors ${
-                  isActive ? 'bg-gray-700' : 'hover:bg-gray-800'
+                key={windowData.id}
+                className={`h-9 px-2 sm:px-3 rounded-md flex items-center gap-2 whitespace-nowrap transition-colors ${
+                  isActive ? 'bg-slate-700/90' : 'hover:bg-slate-800/80'
                 }`}
-                onClick={() => openWindow(window.id)}
+                onClick={() => openWindow(windowData.id)}
               >
-                <IconComponent className="w-5 h-5 text-white" />
-                <span className="text-white text-sm hidden sm:inline">{window.title}</span>
+                <IconComponent className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-100" />
+                <span className="text-white text-xs sm:text-sm hidden md:inline">{windowData.title}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      <div className="flex items-center space-x-4 text-white">
-        <div className="flex items-center space-x-1">
-          <button
-            onClick={() => onLanguageChange(language === 'es' ? 'en' : 'es')}
-            className="p-2 text-white hover:bg-slate-700/50 rounded-md transition-colors"
-            title={language === 'es' ? 'Cambiar a Inglés' : 'Switch to Spanish'}
-          >
-            <Languages size={20} />
-          </button>
-          <button className="p-2 text-white hover:bg-slate-700/50 rounded-md transition-colors">
-            <Calendar size={20} />
-          </button>
-        </div>
-        <div className="flex items-center space-x-1">
-          <Clock className="w-4 h-4" />
-          <span className="text-sm">{formatTime(currentTime)}</span>
+      <div className="flex items-center gap-1 sm:gap-2 text-white shrink-0">
+        <button
+          type="button"
+          onClick={() => onLanguageChange(language === 'es' ? 'en' : 'es')}
+          className="p-2 hover:bg-slate-700/50 rounded-md transition-colors"
+          title={language === 'es' ? 'Cambiar a Ingles' : 'Switch to Spanish'}
+        >
+          <Languages size={18} />
+        </button>
+
+        <div className="flex items-center gap-1 text-xs sm:text-sm px-2 py-1 rounded bg-black/20 border border-white/10">
+          <Clock className="w-3.5 h-3.5" />
+          <span>{formatTime(currentTime)}</span>
         </div>
       </div>
     </div>

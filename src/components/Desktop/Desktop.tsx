@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useWindowManager } from '../../context/WindowManagerContext';
 import DesktopIcon from './DesktopIcon';
 import Window from '../Window/Window';
@@ -24,7 +24,7 @@ const Desktop = ({ language, onLanguageChange }: DesktopProps) => {
 
   const translations = {
     es: {
-      aboutMe: 'Sobre Mí',
+      aboutMe: 'Sobre Mi',
       projects: 'Proyectos',
       experiences: 'Experiencias',
       languages: 'Idiomas',
@@ -33,7 +33,7 @@ const Desktop = ({ language, onLanguageChange }: DesktopProps) => {
       contact: 'Contacto',
       refresh: 'Actualizar',
       newFolder: 'Nueva Carpeta',
-      displaySettings: 'Configuración de Pantalla'
+      displaySettings: 'Configuracion de Pantalla',
     },
     en: {
       aboutMe: 'About Me',
@@ -45,11 +45,15 @@ const Desktop = ({ language, onLanguageChange }: DesktopProps) => {
       contact: 'Contact',
       refresh: 'Refresh',
       newFolder: 'New Folder',
-      displaySettings: 'Display Settings'
-    }
+      displaySettings: 'Display Settings',
+    },
   } as const;
 
   const handleContextMenu = (e: React.MouseEvent) => {
+    if (window.innerWidth < 768) {
+      return;
+    }
+
     e.preventDefault();
     setContextMenuPosition({ x: e.clientX, y: e.clientY });
     setShowContextMenu(true);
@@ -61,7 +65,6 @@ const Desktop = ({ language, onLanguageChange }: DesktopProps) => {
     }
   };
 
-  // Get component based on content type
   const getWindowContent = (contentType: string) => {
     switch (contentType) {
       case 'aboutMe':
@@ -84,18 +87,16 @@ const Desktop = ({ language, onLanguageChange }: DesktopProps) => {
   };
 
   return (
-    <div 
-      className="relative w-full min-h-screen pb-20 md:pb-0"
+    <div
+      className="relative w-full min-h-screen pb-16 md:pb-14"
       onContextMenu={handleContextMenu}
       onClick={handleClick}
     >
-      {/* Animated Background */}
       <JarvisBackground />
 
-      {/* Desktop Content (Icons, Windows, Taskbar) */}
-      <div className="absolute inset-0 z-10 overflow-y-auto">
-        <div className="p-2 md:p-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12 gap-2 md:gap-4">
-          <div className="flex flex-col space-y-2 md:space-y-6 mt-2 md:mt-4 mb-16 md:mb-0">
+      <div className="absolute inset-0 z-10 overflow-hidden">
+        <div className="h-full overflow-y-auto p-3 sm:p-4 md:p-5">
+          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2 sm:gap-3 md:gap-4 content-start pb-24">
             <DesktopIcon
               id="aboutMe"
               icon="User"
@@ -141,34 +142,30 @@ const Desktop = ({ language, onLanguageChange }: DesktopProps) => {
           </div>
         </div>
 
-        {/* Render all windows */}
-        {Object.values(windows).map((window) => 
-          window.isOpen && (
-            <Window
-              key={window.id}
-              id={window.id}
-              title={translations[language][window.id as keyof typeof translations[typeof language]]}
-              isMinimized={window.isMinimized}
-              isMaximized={window.isMaximized}
-              zIndex={window.zIndex}
-              position={window.position}
-              size={window.size}
-            >
-              {getWindowContent(window.content)}
-            </Window>
-          )
+        {Object.values(windows).map(
+          (windowData) =>
+            windowData.isOpen && (
+              <Window
+                key={windowData.id}
+                id={windowData.id}
+                title={translations[language][windowData.id as keyof typeof translations[typeof language]]}
+                isMinimized={windowData.isMinimized}
+                isMaximized={windowData.isMaximized}
+                zIndex={windowData.zIndex}
+                position={windowData.position}
+                size={windowData.size}
+              >
+                {getWindowContent(windowData.content)}
+              </Window>
+            )
         )}
 
-        {/* Context Menu */}
         {showContextMenu && (
-          <div 
+          <div
             className="absolute bg-white shadow-lg rounded-md overflow-hidden z-50"
-            style={{ 
-              left: `${contextMenuPosition.x}px`, 
-              top: `${contextMenuPosition.y}px` 
-            }}
+            style={{ left: `${contextMenuPosition.x}px`, top: `${contextMenuPosition.y}px` }}
           >
-            <ul className="py-2">
+            <ul className="py-2 text-sm">
               <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">{translations[language].refresh}</li>
               <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">{translations[language].newFolder}</li>
               <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">{translations[language].displaySettings}</li>

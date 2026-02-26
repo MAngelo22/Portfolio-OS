@@ -1,26 +1,24 @@
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+﻿import { Canvas } from '@react-three/fiber';
 import ParticleField from './ParticleField';
 
 const JarvisBackground = () => {
   return (
-    <div className="absolute inset-0 z-0">
+    <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_35%,rgba(20,120,180,0.2),transparent_50%),linear-gradient(180deg,#030712_0%,#020617_100%)]">
       <Canvas
+        dpr={[1, 1.5]}
         camera={{
-          position: [0, 0, 5], // Adjust camera position as needed
-          fov: 75,
+          position: [0, 0, 4.6],
+          fov: 70,
           near: 0.1,
           far: 1000,
         }}
       >
-        <ambientLight intensity={0.3} color="#0af" />
-        <pointLight position={[10, 10, 10]} intensity={0.2} color="#0af" />
+        <ambientLight intensity={0.25} color="#34d5ff" />
+        <pointLight position={[2, 2, 3]} intensity={0.45} color="#34d5ff" />
         <ParticleField />
-        {/* Optional: Add OrbitControls for development/debugging */}
-        {/* <OrbitControls enableZoom={false} enablePan={false} /> */}
       </Canvas>
     </div>
   );
 };
 
-export default JarvisBackground; 
+export default JarvisBackground;
