@@ -31,7 +31,7 @@ const Projects = ({ language }: ProjectsProps) => {
       description: 'Sitio web diseñado para que puedas jugar interactivamente juegos clásicos contra la máquina',
       tech: 'HTML, JS, CSS',
       image: 'https://static.wixstatic.com/media/c6eee4_e12c4b309eef48a093129e3328ef6e9f~mv2.webp',
-      demoUrl: 'https://gamesclassic.netlify.app/piedra2',
+      demoUrl: 'https://handgamev2.netlify.app/home',
       codeUrl: 'https://github.com/MAngelo22/HANDgame.git'
     },
     {
