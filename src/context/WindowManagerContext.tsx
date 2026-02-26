@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+﻿import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface WindowData {
   id: string;
@@ -113,6 +113,18 @@ const initialWindows: Record<string, WindowData> = {
     content: 'contact',
     icon: 'Mail',
   },
+  videos: {
+    id: 'videos',
+    title: 'Videos',
+    isOpen: false,
+    isMinimized: false,
+    isMaximized: false,
+    zIndex: 0,
+    position: { x: 160, y: 160 },
+    size: { width: window.innerWidth > 768 ? 900 : window.innerWidth - 40, height: window.innerWidth > 768 ? 620 : window.innerHeight - 100 },
+    content: 'videos',
+    icon: 'Clapperboard',
+  },
 };
 
 export const WindowManagerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -125,7 +137,7 @@ export const WindowManagerProvider: React.FC<{ children: ReactNode }> = ({ child
       const newZIndex = highestZIndex + 1;
       setHighestZIndex(newZIndex);
       
-      // Ajustar el tamaño y posición para móvil
+      // Ajustar el tamaÃ±o y posiciÃ³n para mÃ³vil
       const isMobile = window.innerWidth <= 768;
       const position = isMobile ? { x: 20, y: 20 } : prev[id].position;
       const size = isMobile 
@@ -138,7 +150,7 @@ export const WindowManagerProvider: React.FC<{ children: ReactNode }> = ({ child
           ...prev[id],
           isOpen: true,
           isMinimized: false,
-          isMaximized: isMobile, // Maximizar automáticamente en móvil
+          isMaximized: isMobile, // Maximizar automÃ¡ticamente en mÃ³vil
           zIndex: newZIndex,
           position,
           size,
@@ -240,7 +252,7 @@ export const WindowManagerProvider: React.FC<{ children: ReactNode }> = ({ child
 
   const updateWindowPosition = (id: string, position: { x: number; y: number }) => {
     const isMobile = window.innerWidth <= 768;
-    if (isMobile) return; // No permitir arrastrar en móvil
+    if (isMobile) return; // No permitir arrastrar en mÃ³vil
 
     setWindows((prev) => ({
       ...prev,
@@ -253,7 +265,7 @@ export const WindowManagerProvider: React.FC<{ children: ReactNode }> = ({ child
 
   const updateWindowSize = (id: string, size: { width: number; height: number }) => {
     const isMobile = window.innerWidth <= 768;
-    if (isMobile) return; // No permitir redimensionar en móvil
+    if (isMobile) return; // No permitir redimensionar en mÃ³vil
 
     setWindows((prev) => ({
       ...prev,

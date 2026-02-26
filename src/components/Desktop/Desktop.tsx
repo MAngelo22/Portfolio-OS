@@ -10,6 +10,7 @@ import Languages from '../Content/Languages';
 import Studies from '../Content/Studies';
 import Games from '../Content/Games';
 import Contact from '../Content/Contact';
+import Videos from '../Content/Videos';
 import JarvisBackground from '../Background/JarvisBackground';
 
 interface DesktopProps {
@@ -31,6 +32,7 @@ const Desktop = ({ language, onLanguageChange }: DesktopProps) => {
       studies: 'Estudios',
       games: 'Juegos',
       contact: 'Contacto',
+      videos: 'Videos',
       refresh: 'Actualizar',
       newFolder: 'Nueva Carpeta',
       displaySettings: 'Configuracion de Pantalla',
@@ -43,6 +45,7 @@ const Desktop = ({ language, onLanguageChange }: DesktopProps) => {
       studies: 'Studies',
       games: 'Games',
       contact: 'Contact',
+      videos: 'Videos',
       refresh: 'Refresh',
       newFolder: 'New Folder',
       displaySettings: 'Display Settings',
@@ -81,6 +84,8 @@ const Desktop = ({ language, onLanguageChange }: DesktopProps) => {
         return <Games language={language} />;
       case 'contact':
         return <Contact language={language} />;
+      case 'videos':
+        return <Videos language={language} />;
       default:
         return <div>Content not found</div>;
     }
@@ -138,6 +143,12 @@ const Desktop = ({ language, onLanguageChange }: DesktopProps) => {
               icon="Mail"
               label={translations[language].contact}
               onClick={() => openWindow('contact')}
+            />
+            <DesktopIcon
+              id="videos"
+              icon="Clapperboard"
+              label={translations[language].videos}
+              onClick={() => openWindow('videos')}
             />
           </div>
         </div>
