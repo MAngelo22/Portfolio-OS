@@ -12,6 +12,10 @@ import Games from '../Content/Games';
 import Contact from '../Content/Contact';
 import Videos from '../Content/Videos';
 import JarvisBackground from '../Background/JarvisBackground';
+import icoHalcon from '../icons/ico-halcon.png';
+import ico3d from '../icons/ico-3d.png';
+import icoHandgame from '../icons/ico-handgame.png';
+import icoRedpill from '../icons/ico-redpill.png';
 
 interface DesktopProps {
   language: 'es' | 'en';
@@ -149,6 +153,30 @@ const Desktop = ({ language, onLanguageChange }: DesktopProps) => {
               icon="Clapperboard"
               label={translations[language].videos}
               onClick={() => openWindow('videos')}
+            />
+            <DesktopIcon
+              id="spaceExe"
+              imageSrc={icoHalcon}
+              label="Space.exe"
+              onClick={() => window.open('https://manl-space.netlify.app/', '_blank', 'noopener,noreferrer')}
+            />
+            <DesktopIcon
+              id="3dExe"
+              imageSrc={ico3d}
+              label="3D.exe"
+              onClick={() => window.open('https://manl3d.netlify.app/', '_blank', 'noopener,noreferrer')}
+            />
+            <DesktopIcon
+              id="handGameExe"
+              imageSrc={icoHandgame}
+              label="HandGame.exe"
+              onClick={() => window.open('https://handgamev2.netlify.app/', '_blank', 'noopener,noreferrer')}
+            />
+            <DesktopIcon
+              id="redPillExe"
+              imageSrc={icoRedpill}
+              label="RedPill.exe"
+              onClick={() => window.open('https://mantrix.netlify.app/', '_blank', 'noopener,noreferrer')}
             />
           </div>
         </div>

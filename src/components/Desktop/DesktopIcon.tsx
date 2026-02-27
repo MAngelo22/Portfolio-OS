@@ -2,13 +2,14 @@
 
 interface DesktopIconProps {
   id: string;
-  icon: keyof typeof Icons;
+  icon?: keyof typeof Icons;
+  imageSrc?: string;
   label: string;
   onClick: () => void;
 }
 
-const DesktopIcon: React.FC<DesktopIconProps> = ({ icon, label, onClick }) => {
-  const IconComponent = Icons[icon];
+const DesktopIcon: React.FC<DesktopIconProps> = ({ icon, imageSrc, label, onClick }) => {
+  const IconComponent = icon ? Icons[icon] : null;
 
   return (
     <button
@@ -17,7 +18,11 @@ const DesktopIcon: React.FC<DesktopIconProps> = ({ icon, label, onClick }) => {
       onClick={onClick}
     >
       <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-cyan-500/20 border border-cyan-300/30 rounded-xl mb-1.5 backdrop-blur-sm group-hover:bg-cyan-400/30 group-hover:scale-105 transition-all">
-        <IconComponent className="w-7 h-7 sm:w-8 sm:h-8 text-cyan-100" />
+        {imageSrc ? (
+          <img src={imageSrc} alt={label} className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
+        ) : IconComponent ? (
+          <IconComponent className="w-7 h-7 sm:w-8 sm:h-8 text-cyan-100" />
+        ) : null}
       </div>
       <span className="text-white text-xs sm:text-sm font-medium text-center px-2 py-0.5 rounded bg-black/50 max-w-full truncate">
         {label}
