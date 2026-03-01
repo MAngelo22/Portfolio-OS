@@ -607,7 +607,7 @@ const CardFace = ({ card }: { card: Card }) => {
 };
 
 const cardClass = (card: Card) =>
-  `w-14 sm:w-16 h-20 border rounded-md overflow-hidden ${
+  `w-12 sm:w-16 h-16 sm:h-20 border rounded-md overflow-hidden ${
     card.faceUp ? 'bg-white' : 'bg-blue-700 text-blue-100'
   }`;
 
@@ -1022,12 +1022,12 @@ const SolitaireGame = () => {
         </button>
       </div>
 
-      <div className="bg-green-700 rounded-lg p-3 text-white">
-        <div className="flex flex-wrap gap-3 items-start justify-between">
-          <div className="flex gap-2">
+      <div className="bg-green-700 rounded-lg p-2 sm:p-3 text-white">
+        <div className="flex flex-wrap gap-2 sm:gap-3 items-start justify-between">
+          <div className="flex gap-1.5 sm:gap-2">
             <button
               type="button"
-              className="w-16 h-20 rounded border border-white/40 bg-green-900/40 hover:bg-green-900/60 text-xs"
+              className="w-12 sm:w-16 h-16 sm:h-20 rounded border border-white/40 bg-green-900/40 hover:bg-green-900/60 text-[10px] sm:text-xs"
               onClick={drawFromStock}
               title="Robar carta"
             >
@@ -1036,7 +1036,7 @@ const SolitaireGame = () => {
 
             <button
               type="button"
-              className={`w-16 h-20 rounded border border-white/40 text-xs ${
+              className={`w-12 sm:w-16 h-16 sm:h-20 rounded border border-white/40 text-[10px] sm:text-xs touch-none select-none cursor-grab active:cursor-grabbing ${
                 dragSource?.source === 'waste' ? 'ring-2 ring-yellow-300' : ''
               } ${wasteTop ? 'bg-white text-black p-0 overflow-hidden' : 'bg-green-900/40 text-white/70'} ${
                 activeDrag?.payload.source === 'waste' ? 'opacity-0' : ''
@@ -1055,7 +1055,7 @@ const SolitaireGame = () => {
             </button>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 sm:gap-2">
             {SUITS.map((suit) => {
               const top = state.foundations[suit][state.foundations[suit].length - 1];
               const Icon = suit === 'spades' ? Spade : suit === 'clubs' ? Club : suit === 'diamonds' ? Diamond : Heart;
@@ -1067,7 +1067,7 @@ const SolitaireGame = () => {
                     foundationDropRefs.current[suit] = node;
                   }}
                   type="button"
-                  className={`w-16 h-20 rounded border border-white/40 hover:bg-green-900/60 flex flex-col items-center justify-center text-xs ${
+                  className={`w-12 sm:w-16 h-16 sm:h-20 rounded border border-white/40 hover:bg-green-900/60 flex flex-col items-center justify-center text-[10px] sm:text-xs ${
                     top ? 'bg-white p-0 overflow-hidden' : 'bg-green-900/40'
                   }`}
                   title="Mover carta seleccionada"
@@ -1084,19 +1084,19 @@ const SolitaireGame = () => {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="grid grid-cols-7 gap-2 min-w-[560px] touch-none">
+      <div className="overflow-x-auto touch-pan-x">
+        <div className="grid grid-cols-7 gap-1.5 sm:gap-2 min-w-[420px] sm:min-w-[560px]">
           {state.tableau.map((pile, pileIndex) => (
             <div
               key={pileIndex}
               ref={(node) => {
                 tableauDropRefs.current[pileIndex] = node;
               }}
-              className="relative h-[360px] bg-green-100 rounded-md p-2"
+              className="relative h-[300px] sm:h-[360px] bg-green-100 rounded-md p-1.5 sm:p-2"
               title="Mover selección a esta columna"
             >
               {pile.length === 0 ? (
-                <div className="w-14 sm:w-16 h-20 border border-dashed border-green-400 rounded-md" />
+                <div className="w-12 sm:w-16 h-16 sm:h-20 border border-dashed border-green-400 rounded-md" />
               ) : (
                 pile.map((card, cardIndex) => {
                   const isSequenceStart = card.faceUp && isValidTableauSequence(pile, cardIndex);
@@ -1110,7 +1110,7 @@ const SolitaireGame = () => {
                     <button
                       key={card.id}
                       type="button"
-                      className={`${cardClass(card)} absolute left-2 ${
+                      className={`${cardClass(card)} absolute left-1.5 sm:left-2 touch-none select-none cursor-grab active:cursor-grabbing ${
                         dragSource?.source === 'tableau' &&
                         dragSource.pileIndex === pileIndex &&
                         dragSource.cardIndex === cardIndex
@@ -1119,7 +1119,7 @@ const SolitaireGame = () => {
                       } ${movingFromThisPile ? 'opacity-0' : ''} ${
                         card.faceUp ? '' : 'flex items-center justify-center'
                       }`}
-                      style={{ top: `${cardIndex * 24}px`, zIndex: cardIndex + 1 }}
+                      style={{ top: `${cardIndex * 20}px`, zIndex: cardIndex + 1 }}
                       onDoubleClick={() => autoMoveTableauCardToFoundation(pileIndex, cardIndex)}
                       onPointerDown={(event) => {
                         if (!isSequenceStart) {
@@ -1158,7 +1158,7 @@ const SolitaireGame = () => {
             <div
               key={`${card.id}-${index}`}
               className={`${cardClass(card)} absolute left-0 shadow-lg`}
-              style={{ top: `${index * 24}px`, zIndex: index + 1 }}
+              style={{ top: `${index * 20}px`, zIndex: index + 1 }}
             >
               <CardFace card={card} />
             </div>
