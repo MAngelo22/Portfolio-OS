@@ -614,6 +614,7 @@ const cardClass = (card: Card) =>
 const SolitaireGame = () => {
   const [state, setState] = useState(initializeSolitaire);
   const [dragSource, setDragSource] = useState<DragPayload | null>(null);
+  const [selectedPayload, setSelectedPayload] = useState<DragPayload | null>(null);
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
   const [fallingCards, setFallingCards] = useState<FallingCard[]>([]);
   const tableauDropRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -650,6 +651,7 @@ const SolitaireGame = () => {
   const reset = () => {
     setState(initializeSolitaire());
     setDragSource(null);
+    setSelectedPayload(null);
     setActiveDrag(null);
     setFallingCards([]);
   };
@@ -659,6 +661,7 @@ const SolitaireGame = () => {
       return;
     }
     setDragSource(null);
+    setSelectedPayload(null);
     setActiveDrag(null);
     setState((prev) => {
       if (prev.stock.length === 0) {
@@ -710,8 +713,9 @@ const SolitaireGame = () => {
 
   const movePayloadToTableau = useCallback((payload: DragPayload, targetPileIndex: number) => {
     if (foundationsDone) {
-      return;
+      return false;
     }
+    let moved = false;
     setState((prev) => {
       const targetPile = prev.tableau[targetPileIndex];
 
@@ -720,6 +724,7 @@ const SolitaireGame = () => {
         if (!card || !canMoveToTableau(card, targetPile)) {
           return prev;
         }
+        moved = true;
         const nextTableau = prev.tableau.map((pile, index) =>
           index === targetPileIndex ? [...pile, card] : pile
         );
@@ -748,6 +753,7 @@ const SolitaireGame = () => {
       if (!movingCard || !canMoveToTableau(movingCard, targetPile)) {
         return prev;
       }
+      moved = true;
 
       const nextTableau = prev.tableau.map((pile, index) => {
         if (index === fromPileIndex) {
@@ -765,14 +771,19 @@ const SolitaireGame = () => {
 
       return { ...prev, tableau: nextTableau };
     });
-    setDragSource(null);
-    setActiveDrag(null);
+    if (moved) {
+      setDragSource(null);
+      setSelectedPayload(null);
+      setActiveDrag(null);
+    }
+    return moved;
   }, [foundationsDone]);
 
   const movePayloadToFoundation = useCallback((payload: DragPayload, suit: Suit) => {
     if (foundationsDone) {
-      return;
+      return false;
     }
+    let moved = false;
     setState((prev) => {
       const foundationPile = prev.foundations[suit];
 
@@ -781,6 +792,7 @@ const SolitaireGame = () => {
         if (!card || card.suit !== suit || !canMoveToFoundation(card, foundationPile)) {
           return prev;
         }
+        moved = true;
         return {
           ...prev,
           waste: prev.waste.slice(0, -1),
@@ -807,6 +819,7 @@ const SolitaireGame = () => {
       if (card.suit !== suit || !canMoveToFoundation(card, foundationPile)) {
         return prev;
       }
+      moved = true;
 
       const nextTableau = prev.tableau.map((pile, index) => {
         if (index !== fromPileIndex) {
@@ -828,8 +841,12 @@ const SolitaireGame = () => {
         },
       };
     });
-    setDragSource(null);
-    setActiveDrag(null);
+    if (moved) {
+      setDragSource(null);
+      setSelectedPayload(null);
+      setActiveDrag(null);
+    }
+    return moved;
   }, [foundationsDone]);
 
   const autoMoveWasteToFoundation = () => {
@@ -894,6 +911,7 @@ const SolitaireGame = () => {
 
     const rect = event.currentTarget.getBoundingClientRect();
     event.preventDefault();
+    setSelectedPayload(null);
     setDragSource(payload);
     setActiveDrag({
       payload,
@@ -1037,10 +1055,16 @@ const SolitaireGame = () => {
             <button
               type="button"
               className={`w-12 sm:w-16 h-16 sm:h-20 rounded border border-white/40 text-[10px] sm:text-xs touch-none select-none cursor-grab active:cursor-grabbing ${
-                dragSource?.source === 'waste' ? 'ring-2 ring-yellow-300' : ''
+                dragSource?.source === 'waste' || selectedPayload?.source === 'waste' ? 'ring-2 ring-yellow-300' : ''
               } ${wasteTop ? 'bg-white text-black p-0 overflow-hidden' : 'bg-green-900/40 text-white/70'} ${
                 activeDrag?.payload.source === 'waste' ? 'opacity-0' : ''
               }`}
+              onClick={() => {
+                if (!wasteTop || foundationsDone || activeDrag) {
+                  return;
+                }
+                setSelectedPayload((current) => (current?.source === 'waste' ? null : { source: 'waste' }));
+              }}
               onDoubleClick={autoMoveWasteToFoundation}
               disabled={!wasteTop}
               onPointerDown={(event) => {
@@ -1070,6 +1094,12 @@ const SolitaireGame = () => {
                   className={`w-12 sm:w-16 h-16 sm:h-20 rounded border border-white/40 hover:bg-green-900/60 flex flex-col items-center justify-center text-[10px] sm:text-xs ${
                     top ? 'bg-white p-0 overflow-hidden' : 'bg-green-900/40'
                   }`}
+                  onClick={() => {
+                    if (!selectedPayload || activeDrag) {
+                      return;
+                    }
+                    movePayloadToFoundation(selectedPayload, suit);
+                  }}
                   title="Mover carta seleccionada"
                 >
                   {top ? (
@@ -1093,6 +1123,12 @@ const SolitaireGame = () => {
                 tableauDropRefs.current[pileIndex] = node;
               }}
               className="relative h-[300px] sm:h-[360px] bg-green-100 rounded-md p-1.5 sm:p-2"
+              onClick={() => {
+                if (!selectedPayload || activeDrag) {
+                  return;
+                }
+                movePayloadToTableau(selectedPayload, pileIndex);
+              }}
               title="Mover selección a esta columna"
             >
               {pile.length === 0 ? (
@@ -1116,12 +1152,35 @@ const SolitaireGame = () => {
                         dragSource.cardIndex === cardIndex
                           ? 'ring-2 ring-yellow-400'
                           : ''
+                      } ${
+                        selectedPayload?.source === 'tableau' &&
+                        selectedPayload.pileIndex === pileIndex &&
+                        selectedPayload.cardIndex === cardIndex
+                          ? 'ring-2 ring-blue-400'
+                          : ''
                       } ${movingFromThisPile ? 'opacity-0' : ''} ${
                         card.faceUp ? '' : 'flex items-center justify-center'
                       }`}
                       style={{ top: `${cardIndex * 20}px`, zIndex: cardIndex + 1 }}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (!isSequenceStart || foundationsDone || activeDrag) {
+                          return;
+                        }
+                        setSelectedPayload((current) => {
+                          if (
+                            current?.source === 'tableau' &&
+                            current.pileIndex === pileIndex &&
+                            current.cardIndex === cardIndex
+                          ) {
+                            return null;
+                          }
+                          return { source: 'tableau', pileIndex, cardIndex };
+                        });
+                      }}
                       onDoubleClick={() => autoMoveTableauCardToFoundation(pileIndex, cardIndex)}
                       onPointerDown={(event) => {
+                        event.stopPropagation();
                         if (!isSequenceStart) {
                           return;
                         }
@@ -1169,7 +1228,7 @@ const SolitaireGame = () => {
       <p className="text-sm text-gray-600">
         {foundationsDone
           ? 'Ganaste la partida. Animacion de caida activada.'
-          : 'Arrastra desde waste o columnas con raton o dedo. Doble clic en carta visible para auto-fundacion.'}
+          : 'Arrastra o toca para mover: selecciona carta y luego toca columna/fundacion. Doble clic auto-fundacion.'}
       </p>
     </div>
   );
