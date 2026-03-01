@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Gamepad2, Sparkles, RefreshCcw, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Spade, Club, Diamond, Heart, Layers } from 'lucide-react';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
@@ -442,6 +442,16 @@ interface DragPayload {
   cardIndex?: number;
 }
 
+interface ActiveDrag {
+  payload: DragPayload;
+  cards: Card[];
+  pointerId: number;
+  x: number;
+  y: number;
+  offsetX: number;
+  offsetY: number;
+}
+
 interface FallingCard {
   id: number;
   left: number;
@@ -539,15 +549,80 @@ const canMoveToFoundation = (movingCard: Card, foundation: Card[]) => {
   return top.suit === movingCard.suit && movingCard.rank === top.rank + 1;
 };
 
+const NUMBER_PIP_LAYOUT: Record<number, Array<'none' | 'single' | 'pair'>> = {
+  1: ['none', 'none', 'single', 'none', 'none'],
+  2: ['single', 'none', 'none', 'none', 'single'],
+  3: ['single', 'none', 'single', 'none', 'single'],
+  4: ['pair', 'none', 'none', 'none', 'pair'],
+  5: ['pair', 'none', 'single', 'none', 'pair'],
+  6: ['pair', 'none', 'pair', 'none', 'pair'],
+  7: ['pair', 'single', 'pair', 'none', 'pair'],
+  8: ['pair', 'single', 'pair', 'single', 'pair'],
+  9: ['pair', 'pair', 'single', 'pair', 'pair'],
+  10: ['pair', 'pair', 'pair', 'pair', 'pair'],
+};
+
+const CardFace = ({ card }: { card: Card }) => {
+  const label = rankLabel(card.rank);
+  const symbol = suitLabel(card.suit);
+  const tone = isRed(card.suit) ? 'text-red-600' : 'text-gray-900';
+  const pipLayout = card.rank <= 10 ? NUMBER_PIP_LAYOUT[card.rank] : null;
+
+  return (
+    <div className={`relative w-full h-full ${tone}`}>
+      <div className="absolute top-1 left-1 flex flex-col items-center leading-none">
+        <span className="text-[10px] sm:text-xs font-bold">{label}</span>
+        <span className="text-[10px] sm:text-xs">{symbol}</span>
+      </div>
+
+      <div className="absolute right-1 bottom-1 rotate-180 flex flex-col items-center leading-none">
+        <span className="text-[10px] sm:text-xs font-bold">{label}</span>
+        <span className="text-[10px] sm:text-xs">{symbol}</span>
+      </div>
+
+      <div className="absolute inset-0 px-2 py-1 flex items-center justify-center">
+        {pipLayout ? (
+          <div className="w-full h-full pt-3 pb-3 flex flex-col justify-between">
+            {pipLayout.map((row, index) => (
+              <div key={`${card.id}-pip-${index}`} className="w-full flex items-center justify-center leading-tight">
+                {row === 'single' && <span className="text-[13px] sm:text-sm">{symbol}</span>}
+                {row === 'pair' && (
+                  <div className="w-full flex items-center justify-between px-1">
+                    <span className="text-[13px] sm:text-sm">{symbol}</span>
+                    <span className="text-[13px] sm:text-sm">{symbol}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center leading-none">
+            <span className="text-xl sm:text-2xl font-bold">{label}</span>
+            <span className="text-lg sm:text-xl">{symbol}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const cardClass = (card: Card) =>
-  `w-14 sm:w-16 h-20 border rounded-md text-sm font-semibold flex flex-col items-center justify-center ${
+  `w-14 sm:w-16 h-20 border rounded-md overflow-hidden ${
     card.faceUp ? 'bg-white' : 'bg-blue-700 text-blue-100'
-  } ${isRed(card.suit) ? 'text-red-600' : 'text-gray-800'}`;
+  }`;
 
 const SolitaireGame = () => {
   const [state, setState] = useState(initializeSolitaire);
   const [dragSource, setDragSource] = useState<DragPayload | null>(null);
+  const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
   const [fallingCards, setFallingCards] = useState<FallingCard[]>([]);
+  const tableauDropRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const foundationDropRefs = useRef<Record<Suit, HTMLButtonElement | null>>({
+    spades: null,
+    clubs: null,
+    diamonds: null,
+    hearts: null,
+  });
 
   const wasteTop = state.waste[state.waste.length - 1];
   const foundationsDone = Object.values(state.foundations).every((pile) => pile.length === 13);
@@ -575,11 +650,16 @@ const SolitaireGame = () => {
   const reset = () => {
     setState(initializeSolitaire());
     setDragSource(null);
+    setActiveDrag(null);
     setFallingCards([]);
   };
 
   const drawFromStock = () => {
+    if (foundationsDone) {
+      return;
+    }
     setDragSource(null);
+    setActiveDrag(null);
     setState((prev) => {
       if (prev.stock.length === 0) {
         if (prev.waste.length === 0) {
@@ -628,25 +708,10 @@ const SolitaireGame = () => {
     return true;
   };
 
-  const getPayloadFromDrag = (event: React.DragEvent): DragPayload | null => {
-    const raw = event.dataTransfer.getData('text/plain');
-    if (!raw) {
-      return dragSource;
+  const movePayloadToTableau = useCallback((payload: DragPayload, targetPileIndex: number) => {
+    if (foundationsDone) {
+      return;
     }
-    try {
-      return JSON.parse(raw) as DragPayload;
-    } catch {
-      return dragSource;
-    }
-  };
-
-  const beginDrag = (payload: DragPayload) => (event: React.DragEvent) => {
-    setDragSource(payload);
-    event.dataTransfer.setData('text/plain', JSON.stringify(payload));
-    event.dataTransfer.effectAllowed = 'move';
-  };
-
-  const movePayloadToTableau = (payload: DragPayload, targetPileIndex: number) => {
     setState((prev) => {
       const targetPile = prev.tableau[targetPileIndex];
 
@@ -701,9 +766,13 @@ const SolitaireGame = () => {
       return { ...prev, tableau: nextTableau };
     });
     setDragSource(null);
-  };
+    setActiveDrag(null);
+  }, [foundationsDone]);
 
-  const movePayloadToFoundation = (payload: DragPayload, suit: Suit) => {
+  const movePayloadToFoundation = useCallback((payload: DragPayload, suit: Suit) => {
+    if (foundationsDone) {
+      return;
+    }
     setState((prev) => {
       const foundationPile = prev.foundations[suit];
 
@@ -760,14 +829,163 @@ const SolitaireGame = () => {
       };
     });
     setDragSource(null);
-  };
+    setActiveDrag(null);
+  }, [foundationsDone]);
 
   const autoMoveWasteToFoundation = () => {
-    if (!wasteTop) {
+    if (!wasteTop || foundationsDone) {
       return;
     }
     movePayloadToFoundation({ source: 'waste' }, wasteTop.suit);
   };
+
+  const autoMoveTableauCardToFoundation = (pileIndex: number, cardIndex: number) => {
+    if (foundationsDone) {
+      return;
+    }
+
+    setState((prev) => {
+      const pile = prev.tableau[pileIndex];
+      if (cardIndex !== pile.length - 1) {
+        return prev;
+      }
+
+      const card = pile[cardIndex];
+      if (!card || !card.faceUp) {
+        return prev;
+      }
+
+      const foundationPile = prev.foundations[card.suit];
+      if (!canMoveToFoundation(card, foundationPile)) {
+        return prev;
+      }
+
+      const reduced = pile.slice(0, -1);
+      if (reduced.length > 0) {
+        reduced[reduced.length - 1] = { ...reduced[reduced.length - 1], faceUp: true };
+      }
+
+      const nextTableau = prev.tableau.map((tableauPile, index) =>
+        index === pileIndex ? reduced : tableauPile
+      );
+
+      return {
+        ...prev,
+        tableau: nextTableau,
+        foundations: {
+          ...prev.foundations,
+          [card.suit]: [...foundationPile, card],
+        },
+      };
+    });
+  };
+
+  const startPointerDrag = (
+    event: React.PointerEvent<HTMLButtonElement>,
+    payload: DragPayload,
+    cards: Card[]
+  ) => {
+    if (foundationsDone || cards.length === 0) {
+      return;
+    }
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return;
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    event.preventDefault();
+    setDragSource(payload);
+    setActiveDrag({
+      payload,
+      cards,
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+    });
+  };
+
+  useEffect(() => {
+    if (!activeDrag) {
+      return;
+    }
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerId !== activeDrag.pointerId) {
+        return;
+      }
+      setActiveDrag((current) =>
+        current
+          ? {
+              ...current,
+              x: event.clientX,
+              y: event.clientY,
+            }
+          : current
+      );
+    };
+
+    const handlePointerEnd = (event: PointerEvent) => {
+      if (event.pointerId !== activeDrag.pointerId) {
+        return;
+      }
+
+      let moved = false;
+      for (const suit of SUITS) {
+        const foundationNode = foundationDropRefs.current[suit];
+        if (!foundationNode) {
+          continue;
+        }
+        const rect = foundationNode.getBoundingClientRect();
+        if (
+          event.clientX >= rect.left &&
+          event.clientX <= rect.right &&
+          event.clientY >= rect.top &&
+          event.clientY <= rect.bottom
+        ) {
+          movePayloadToFoundation(activeDrag.payload, suit);
+          moved = true;
+          break;
+        }
+      }
+
+      if (!moved) {
+        for (let index = 0; index < tableauDropRefs.current.length; index += 1) {
+          const tableauNode = tableauDropRefs.current[index];
+          if (!tableauNode) {
+            continue;
+          }
+          const rect = tableauNode.getBoundingClientRect();
+          if (
+            event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom
+          ) {
+            movePayloadToTableau(activeDrag.payload, index);
+            moved = true;
+            break;
+          }
+        }
+      }
+
+      if (!moved) {
+        setDragSource(null);
+        setActiveDrag(null);
+      }
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerEnd);
+    window.addEventListener('pointercancel', handlePointerEnd);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerEnd);
+      window.removeEventListener('pointercancel', handlePointerEnd);
+    };
+  }, [activeDrag, movePayloadToFoundation, movePayloadToTableau]);
 
   return (
     <div className="h-full flex flex-col gap-4 relative overflow-hidden">
@@ -820,15 +1038,20 @@ const SolitaireGame = () => {
               type="button"
               className={`w-16 h-20 rounded border border-white/40 text-xs ${
                 dragSource?.source === 'waste' ? 'ring-2 ring-yellow-300' : ''
-              } ${wasteTop ? 'bg-white text-black' : 'bg-green-900/40 text-white/70'}`}
+              } ${wasteTop ? 'bg-white text-black p-0 overflow-hidden' : 'bg-green-900/40 text-white/70'} ${
+                activeDrag?.payload.source === 'waste' ? 'opacity-0' : ''
+              }`}
               onDoubleClick={autoMoveWasteToFoundation}
               disabled={!wasteTop}
-              draggable={Boolean(wasteTop)}
-              onDragStart={beginDrag({ source: 'waste' })}
-              onDragEnd={() => setDragSource(null)}
+              onPointerDown={(event) => {
+                if (!wasteTop) {
+                  return;
+                }
+                startPointerDrag(event, { source: 'waste' }, [wasteTop]);
+              }}
               title="Descarte (doble clic para mandar a fundación)"
             >
-              {wasteTop ? `${rankLabel(wasteTop.rank)}${suitLabel(wasteTop.suit)}` : 'Waste'}
+              {wasteTop ? <CardFace card={wasteTop} /> : 'Waste'}
             </button>
           </div>
 
@@ -840,25 +1063,17 @@ const SolitaireGame = () => {
               return (
                 <button
                   key={suit}
+                  ref={(node) => {
+                    foundationDropRefs.current[suit] = node;
+                  }}
                   type="button"
-                  className="w-16 h-20 rounded border border-white/40 bg-green-900/40 hover:bg-green-900/60 flex flex-col items-center justify-center text-xs"
-                  onDragOver={(event) => {
-                    event.preventDefault();
-                    event.dataTransfer.dropEffect = 'move';
-                  }}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    const payload = getPayloadFromDrag(event);
-                    if (payload) {
-                      movePayloadToFoundation(payload, suit);
-                    }
-                  }}
+                  className={`w-16 h-20 rounded border border-white/40 hover:bg-green-900/60 flex flex-col items-center justify-center text-xs ${
+                    top ? 'bg-white p-0 overflow-hidden' : 'bg-green-900/40'
+                  }`}
                   title="Mover carta seleccionada"
                 >
                   {top ? (
-                    <span className={isRed(top.suit) ? 'text-red-200' : 'text-white'}>
-                      {rankLabel(top.rank)}{suitLabel(top.suit)}
-                    </span>
+                    <CardFace card={top} />
                   ) : (
                     <Icon className="w-4 h-4" />
                   )}
@@ -870,33 +1085,26 @@ const SolitaireGame = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <div className="grid grid-cols-7 gap-2 min-w-[560px]">
+        <div className="grid grid-cols-7 gap-2 min-w-[560px] touch-none">
           {state.tableau.map((pile, pileIndex) => (
             <div
               key={pileIndex}
+              ref={(node) => {
+                tableauDropRefs.current[pileIndex] = node;
+              }}
               className="relative h-[360px] bg-green-100 rounded-md p-2"
-              onDragOver={(event) => {
-                event.preventDefault();
-                event.dataTransfer.dropEffect = 'move';
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                const payload = getPayloadFromDrag(event);
-                if (payload) {
-                  movePayloadToTableau(payload, pileIndex);
-                }
-              }}
               title="Mover selección a esta columna"
             >
               {pile.length === 0 ? (
                 <div className="w-14 sm:w-16 h-20 border border-dashed border-green-400 rounded-md" />
               ) : (
                 pile.map((card, cardIndex) => {
-                  const selectable =
-                    card.faceUp &&
-                    (selected?.source !== 'tableau' ||
-                      selected.pileIndex !== pileIndex ||
-                      selected.cardIndex !== cardIndex);
+                  const isSequenceStart = card.faceUp && isValidTableauSequence(pile, cardIndex);
+                  const movingFromThisPile =
+                    activeDrag?.payload.source === 'tableau' &&
+                    activeDrag.payload.pileIndex === pileIndex &&
+                    activeDrag.payload.cardIndex !== undefined &&
+                    cardIndex >= activeDrag.payload.cardIndex;
 
                   return (
                     <button
@@ -908,17 +1116,24 @@ const SolitaireGame = () => {
                         dragSource.cardIndex === cardIndex
                           ? 'ring-2 ring-yellow-400'
                           : ''
+                      } ${movingFromThisPile ? 'opacity-0' : ''} ${
+                        card.faceUp ? '' : 'flex items-center justify-center'
                       }`}
                       style={{ top: `${cardIndex * 24}px`, zIndex: cardIndex + 1 }}
-                      draggable={card.faceUp && selectable && isValidTableauSequence(pile, cardIndex)}
-                      onDragStart={beginDrag({ source: 'tableau', pileIndex, cardIndex })}
-                      onDragEnd={() => setDragSource(null)}
+                      onDoubleClick={() => autoMoveTableauCardToFoundation(pileIndex, cardIndex)}
+                      onPointerDown={(event) => {
+                        if (!isSequenceStart) {
+                          return;
+                        }
+                        startPointerDrag(
+                          event,
+                          { source: 'tableau', pileIndex, cardIndex },
+                          pile.slice(cardIndex)
+                        );
+                      }}
                     >
                       {card.faceUp ? (
-                        <>
-                          <span>{rankLabel(card.rank)}</span>
-                          <span>{suitLabel(card.suit)}</span>
-                        </>
+                        <CardFace card={card} />
                       ) : (
                         <Layers className="w-4 h-4" />
                       )}
@@ -931,10 +1146,30 @@ const SolitaireGame = () => {
         </div>
       </div>
 
+      {activeDrag && (
+        <div
+          className="fixed pointer-events-none z-30"
+          style={{
+            left: activeDrag.x - activeDrag.offsetX,
+            top: activeDrag.y - activeDrag.offsetY,
+          }}
+        >
+          {activeDrag.cards.map((card, index) => (
+            <div
+              key={`${card.id}-${index}`}
+              className={`${cardClass(card)} absolute left-0 shadow-lg`}
+              style={{ top: `${index * 24}px`, zIndex: index + 1 }}
+            >
+              <CardFace card={card} />
+            </div>
+          ))}
+        </div>
+      )}
+
       <p className="text-sm text-gray-600">
         {foundationsDone
-          ? 'Ganaste la partida. Celebracion activada.'
-          : 'Puedes arrastrar desde waste o columnas. Doble clic en waste envia a fundacion si es valido.'}
+          ? 'Ganaste la partida. Animacion de caida activada.'
+          : 'Arrastra desde waste o columnas con raton o dedo. Doble clic en carta visible para auto-fundacion.'}
       </p>
     </div>
   );
