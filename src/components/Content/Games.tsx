@@ -713,9 +713,8 @@ const SolitaireGame = () => {
 
   const movePayloadToTableau = useCallback((payload: DragPayload, targetPileIndex: number) => {
     if (foundationsDone) {
-      return false;
+      return;
     }
-    let moved = false;
     setState((prev) => {
       const targetPile = prev.tableau[targetPileIndex];
 
@@ -724,7 +723,6 @@ const SolitaireGame = () => {
         if (!card || !canMoveToTableau(card, targetPile)) {
           return prev;
         }
-        moved = true;
         const nextTableau = prev.tableau.map((pile, index) =>
           index === targetPileIndex ? [...pile, card] : pile
         );
@@ -753,7 +751,6 @@ const SolitaireGame = () => {
       if (!movingCard || !canMoveToTableau(movingCard, targetPile)) {
         return prev;
       }
-      moved = true;
 
       const nextTableau = prev.tableau.map((pile, index) => {
         if (index === fromPileIndex) {
@@ -771,19 +768,12 @@ const SolitaireGame = () => {
 
       return { ...prev, tableau: nextTableau };
     });
-    if (moved) {
-      setDragSource(null);
-      setSelectedPayload(null);
-      setActiveDrag(null);
-    }
-    return moved;
   }, [foundationsDone]);
 
   const movePayloadToFoundation = useCallback((payload: DragPayload, suit: Suit) => {
     if (foundationsDone) {
-      return false;
+      return;
     }
-    let moved = false;
     setState((prev) => {
       const foundationPile = prev.foundations[suit];
 
@@ -792,7 +782,6 @@ const SolitaireGame = () => {
         if (!card || card.suit !== suit || !canMoveToFoundation(card, foundationPile)) {
           return prev;
         }
-        moved = true;
         return {
           ...prev,
           waste: prev.waste.slice(0, -1),
@@ -819,7 +808,6 @@ const SolitaireGame = () => {
       if (card.suit !== suit || !canMoveToFoundation(card, foundationPile)) {
         return prev;
       }
-      moved = true;
 
       const nextTableau = prev.tableau.map((pile, index) => {
         if (index !== fromPileIndex) {
@@ -841,12 +829,6 @@ const SolitaireGame = () => {
         },
       };
     });
-    if (moved) {
-      setDragSource(null);
-      setSelectedPayload(null);
-      setActiveDrag(null);
-    }
-    return moved;
   }, [foundationsDone]);
 
   const autoMoveWasteToFoundation = () => {
@@ -949,7 +931,6 @@ const SolitaireGame = () => {
         return;
       }
 
-      let moved = false;
       for (const suit of SUITS) {
         const foundationNode = foundationDropRefs.current[suit];
         if (!foundationNode) {
@@ -963,35 +944,35 @@ const SolitaireGame = () => {
           event.clientY <= rect.bottom
         ) {
           movePayloadToFoundation(activeDrag.payload, suit);
-          moved = true;
-          break;
+          setDragSource(null);
+          setSelectedPayload(null);
+          setActiveDrag(null);
+          return;
         }
       }
 
-      if (!moved) {
-        for (let index = 0; index < tableauDropRefs.current.length; index += 1) {
-          const tableauNode = tableauDropRefs.current[index];
-          if (!tableauNode) {
-            continue;
-          }
-          const rect = tableauNode.getBoundingClientRect();
-          if (
-            event.clientX >= rect.left &&
-            event.clientX <= rect.right &&
-            event.clientY >= rect.top &&
-            event.clientY <= rect.bottom
-          ) {
-            movePayloadToTableau(activeDrag.payload, index);
-            moved = true;
-            break;
-          }
+      for (let index = 0; index < tableauDropRefs.current.length; index += 1) {
+        const tableauNode = tableauDropRefs.current[index];
+        if (!tableauNode) {
+          continue;
+        }
+        const rect = tableauNode.getBoundingClientRect();
+        if (
+          event.clientX >= rect.left &&
+          event.clientX <= rect.right &&
+          event.clientY >= rect.top &&
+          event.clientY <= rect.bottom
+        ) {
+          movePayloadToTableau(activeDrag.payload, index);
+          setDragSource(null);
+          setSelectedPayload(null);
+          setActiveDrag(null);
+          return;
         }
       }
 
-      if (!moved) {
-        setDragSource(null);
-        setActiveDrag(null);
-      }
+      setDragSource(null);
+      setActiveDrag(null);
     };
 
     window.addEventListener('pointermove', handlePointerMove);
@@ -1045,11 +1026,21 @@ const SolitaireGame = () => {
           <div className="flex gap-1.5 sm:gap-2">
             <button
               type="button"
-              className="w-12 sm:w-16 h-16 sm:h-20 rounded border border-white/40 bg-green-900/40 hover:bg-green-900/60 text-[10px] sm:text-xs"
+              className={`w-12 sm:w-16 h-16 sm:h-20 rounded text-[10px] sm:text-xs relative ${
+                state.stock.length > 0
+                  ? 'solitaire-card-back-red text-white'
+                  : 'border border-white/40 bg-green-900/40 hover:bg-green-900/60'
+              }`}
               onClick={drawFromStock}
               title="Robar carta"
             >
-              {state.stock.length > 0 ? `Stock (${state.stock.length})` : 'Reciclar'}
+              {state.stock.length > 0 ? (
+                <span className="absolute bottom-1 right-1 bg-black/35 px-1 rounded leading-none">
+                  {state.stock.length}
+                </span>
+              ) : (
+                'Reciclar'
+              )}
             </button>
 
             <button
@@ -1099,6 +1090,7 @@ const SolitaireGame = () => {
                       return;
                     }
                     movePayloadToFoundation(selectedPayload, suit);
+                    setSelectedPayload(null);
                   }}
                   title="Mover carta seleccionada"
                 >
@@ -1128,6 +1120,7 @@ const SolitaireGame = () => {
                   return;
                 }
                 movePayloadToTableau(selectedPayload, pileIndex);
+                setSelectedPayload(null);
               }}
               title="Mover selección a esta columna"
             >
@@ -1326,5 +1319,4 @@ const Games = () => {
 };
 
 export default Games;
-
 
