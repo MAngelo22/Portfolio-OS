@@ -647,6 +647,13 @@ const SolitaireGame = () => {
     state.waste.length === 0 &&
     state.tableau.every((pile) => pile.every((card) => card.faceUp));
 
+  const pushHistorySnapshot = useCallback((snapshot: SolitaireState) => {
+    setHistory((prev) => {
+      const next = [...prev, cloneSolitaireState(snapshot)];
+      return next.length > 120 ? next.slice(next.length - 120) : next;
+    });
+  }, []);
+
   useEffect(() => {
     if (!foundationsDone) {
       setFallingCards([]);
@@ -729,13 +736,6 @@ const SolitaireGame = () => {
     setActiveDrag(null);
     setFallingCards([]);
   };
-
-  const pushHistorySnapshot = useCallback((snapshot: SolitaireState) => {
-    setHistory((prev) => {
-      const next = [...prev, cloneSolitaireState(snapshot)];
-      return next.length > 120 ? next.slice(next.length - 120) : next;
-    });
-  }, []);
 
   const undoLastMove = () => {
     if (activeDrag) {
