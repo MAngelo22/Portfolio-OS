@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Gamepad2, Sparkles, RefreshCcw, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Spade, Club, Diamond, Heart, Layers } from 'lucide-react';
+import { Gamepad2, Sparkles, RefreshCcw, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Spade, Club, Diamond, Heart, Layers, Undo2 } from 'lucide-react';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
 
@@ -528,6 +528,20 @@ const initializeSolitaire = () => {
   };
 };
 
+type SolitaireState = ReturnType<typeof initializeSolitaire>;
+
+const cloneSolitaireState = (state: SolitaireState): SolitaireState => ({
+  stock: state.stock.map((card) => ({ ...card })),
+  waste: state.waste.map((card) => ({ ...card })),
+  tableau: state.tableau.map((pile) => pile.map((card) => ({ ...card }))),
+  foundations: {
+    spades: state.foundations.spades.map((card) => ({ ...card })),
+    clubs: state.foundations.clubs.map((card) => ({ ...card })),
+    diamonds: state.foundations.diamonds.map((card) => ({ ...card })),
+    hearts: state.foundations.hearts.map((card) => ({ ...card })),
+  },
+});
+
 const canMoveToTableau = (movingCard: Card, pile: Card[]) => {
   const top = pile[pile.length - 1];
   if (!top) {
@@ -616,6 +630,7 @@ const SolitaireGame = () => {
   const [dragSource, setDragSource] = useState<DragPayload | null>(null);
   const [selectedPayload, setSelectedPayload] = useState<DragPayload | null>(null);
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
+  const [history, setHistory] = useState<SolitaireState[]>([]);
   const [fallingCards, setFallingCards] = useState<FallingCard[]>([]);
   const tableauDropRefs = useRef<Array<HTMLDivElement | null>>([]);
   const foundationDropRefs = useRef<Record<Suit, HTMLButtonElement | null>>({
@@ -627,6 +642,10 @@ const SolitaireGame = () => {
 
   const wasteTop = state.waste[state.waste.length - 1];
   const foundationsDone = Object.values(state.foundations).every((pile) => pile.length === 13);
+  const autoFinishReady =
+    state.stock.length === 0 &&
+    state.waste.length === 0 &&
+    state.tableau.every((pile) => pile.every((card) => card.faceUp));
 
   useEffect(() => {
     if (!foundationsDone) {
@@ -648,12 +667,95 @@ const SolitaireGame = () => {
     setFallingCards(burst);
   }, [foundationsDone]);
 
+  useEffect(() => {
+    if (!autoFinishReady || foundationsDone || activeDrag) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setState((prev) => {
+        if (
+          prev.stock.length !== 0 ||
+          prev.waste.length !== 0 ||
+          prev.tableau.some((pile) => pile.some((card) => !card.faceUp))
+        ) {
+          return prev;
+        }
+
+        for (let pileIndex = 0; pileIndex < prev.tableau.length; pileIndex += 1) {
+          const sourcePile = prev.tableau[pileIndex];
+          const card = sourcePile[sourcePile.length - 1];
+          if (!card) {
+            continue;
+          }
+
+          const foundationPile = prev.foundations[card.suit];
+          if (!canMoveToFoundation(card, foundationPile)) {
+            continue;
+          }
+
+          pushHistorySnapshot(prev);
+          const reduced = sourcePile.slice(0, -1);
+          if (reduced.length > 0) {
+            reduced[reduced.length - 1] = { ...reduced[reduced.length - 1], faceUp: true };
+          }
+
+          const nextTableau = prev.tableau.map((pile, index) =>
+            index === pileIndex ? reduced : pile
+          );
+
+          return {
+            ...prev,
+            tableau: nextTableau,
+            foundations: {
+              ...prev.foundations,
+              [card.suit]: [...foundationPile, card],
+            },
+          };
+        }
+
+        return prev;
+      });
+    }, 130);
+
+    return () => window.clearInterval(timer);
+  }, [activeDrag, autoFinishReady, foundationsDone, pushHistorySnapshot]);
+
   const reset = () => {
     setState(initializeSolitaire());
+    setHistory([]);
     setDragSource(null);
     setSelectedPayload(null);
     setActiveDrag(null);
     setFallingCards([]);
+  };
+
+  const pushHistorySnapshot = useCallback((snapshot: SolitaireState) => {
+    setHistory((prev) => {
+      const next = [...prev, cloneSolitaireState(snapshot)];
+      return next.length > 120 ? next.slice(next.length - 120) : next;
+    });
+  }, []);
+
+  const undoLastMove = () => {
+    if (activeDrag) {
+      setDragSource(null);
+      setSelectedPayload(null);
+      setActiveDrag(null);
+      return;
+    }
+
+    setHistory((prev) => {
+      if (prev.length === 0) {
+        return prev;
+      }
+      const previousState = prev[prev.length - 1];
+      setState(cloneSolitaireState(previousState));
+      setDragSource(null);
+      setSelectedPayload(null);
+      setActiveDrag(null);
+      return prev.slice(0, -1);
+    });
   };
 
   const drawFromStock = () => {
@@ -668,6 +770,7 @@ const SolitaireGame = () => {
         if (prev.waste.length === 0) {
           return prev;
         }
+        pushHistorySnapshot(prev);
 
         return {
           ...prev,
@@ -681,6 +784,7 @@ const SolitaireGame = () => {
       if (!card) {
         return prev;
       }
+      pushHistorySnapshot(prev);
 
       return {
         ...prev,
@@ -723,6 +827,7 @@ const SolitaireGame = () => {
         if (!card || !canMoveToTableau(card, targetPile)) {
           return prev;
         }
+        pushHistorySnapshot(prev);
         const nextTableau = prev.tableau.map((pile, index) =>
           index === targetPileIndex ? [...pile, card] : pile
         );
@@ -751,6 +856,7 @@ const SolitaireGame = () => {
       if (!movingCard || !canMoveToTableau(movingCard, targetPile)) {
         return prev;
       }
+      pushHistorySnapshot(prev);
 
       const nextTableau = prev.tableau.map((pile, index) => {
         if (index === fromPileIndex) {
@@ -768,7 +874,7 @@ const SolitaireGame = () => {
 
       return { ...prev, tableau: nextTableau };
     });
-  }, [foundationsDone]);
+  }, [foundationsDone, pushHistorySnapshot]);
 
   const movePayloadToFoundation = useCallback((payload: DragPayload, suit: Suit) => {
     if (foundationsDone) {
@@ -782,6 +888,7 @@ const SolitaireGame = () => {
         if (!card || card.suit !== suit || !canMoveToFoundation(card, foundationPile)) {
           return prev;
         }
+        pushHistorySnapshot(prev);
         return {
           ...prev,
           waste: prev.waste.slice(0, -1),
@@ -808,6 +915,7 @@ const SolitaireGame = () => {
       if (card.suit !== suit || !canMoveToFoundation(card, foundationPile)) {
         return prev;
       }
+      pushHistorySnapshot(prev);
 
       const nextTableau = prev.tableau.map((pile, index) => {
         if (index !== fromPileIndex) {
@@ -829,7 +937,7 @@ const SolitaireGame = () => {
         },
       };
     });
-  }, [foundationsDone]);
+  }, [foundationsDone, pushHistorySnapshot]);
 
   const autoMoveWasteToFoundation = () => {
     if (!wasteTop || foundationsDone) {
@@ -858,6 +966,7 @@ const SolitaireGame = () => {
       if (!canMoveToFoundation(card, foundationPile)) {
         return prev;
       }
+      pushHistorySnapshot(prev);
 
       const reduced = pile.slice(0, -1);
       if (reduced.length > 0) {
@@ -877,6 +986,68 @@ const SolitaireGame = () => {
         },
       };
     });
+  };
+
+  const autoMoveAnyTableauTopToFoundationSuit = (suit: Suit) => {
+    if (foundationsDone) {
+      return;
+    }
+
+    setState((prev) => {
+      const foundationPile = prev.foundations[suit];
+      const fromPileIndex = prev.tableau.findIndex((pile) => {
+        const top = pile[pile.length - 1];
+        return Boolean(top && top.faceUp && top.suit === suit && canMoveToFoundation(top, foundationPile));
+      });
+
+      if (fromPileIndex < 0) {
+        return prev;
+      }
+
+      const sourcePile = prev.tableau[fromPileIndex];
+      const card = sourcePile[sourcePile.length - 1];
+      if (!card) {
+        return prev;
+      }
+      pushHistorySnapshot(prev);
+
+      const reduced = sourcePile.slice(0, -1);
+      if (reduced.length > 0) {
+        reduced[reduced.length - 1] = { ...reduced[reduced.length - 1], faceUp: true };
+      }
+
+      const nextTableau = prev.tableau.map((pile, index) =>
+        index === fromPileIndex ? reduced : pile
+      );
+
+      return {
+        ...prev,
+        tableau: nextTableau,
+        foundations: {
+          ...prev.foundations,
+          [suit]: [...foundationPile, card],
+        },
+      };
+    });
+  };
+
+  const handleFoundationClick = (suit: Suit) => {
+    if (activeDrag || foundationsDone) {
+      return;
+    }
+
+    if (selectedPayload) {
+      movePayloadToFoundation(selectedPayload, suit);
+      setSelectedPayload(null);
+      return;
+    }
+
+    if (wasteTop && wasteTop.suit === suit) {
+      movePayloadToFoundation({ source: 'waste' }, suit);
+      return;
+    }
+
+    autoMoveAnyTableauTopToFoundationSuit(suit);
   };
 
   const startPointerDrag = (
@@ -1012,13 +1183,23 @@ const SolitaireGame = () => {
           <h3 className="text-xl font-bold text-gray-800">Solitario</h3>
           <p className="text-sm text-gray-600">Arrastra cartas y suelta en columnas/fundaciones (reglas clasicas).</p>
         </div>
-        <button
-          className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"
-          onClick={reset}
-          title="Nuevo juego"
-        >
-          <RefreshCcw className="w-4 h-4 text-gray-700" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors disabled:opacity-50"
+            onClick={undoLastMove}
+            disabled={history.length === 0 && !activeDrag}
+            title="Deshacer ultimo movimiento"
+          >
+            <Undo2 className="w-4 h-4 text-gray-700" />
+          </button>
+          <button
+            className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"
+            onClick={reset}
+            title="Nuevo juego"
+          >
+            <RefreshCcw className="w-4 h-4 text-gray-700" />
+          </button>
+        </div>
       </div>
 
       <div className="bg-green-700 rounded-lg p-2 sm:p-3 text-white">
@@ -1085,13 +1266,7 @@ const SolitaireGame = () => {
                   className={`w-12 sm:w-16 h-16 sm:h-20 rounded border border-white/40 hover:bg-green-900/60 flex flex-col items-center justify-center text-[10px] sm:text-xs ${
                     top ? 'bg-white p-0 overflow-hidden' : 'bg-green-900/40'
                   }`}
-                  onClick={() => {
-                    if (!selectedPayload || activeDrag) {
-                      return;
-                    }
-                    movePayloadToFoundation(selectedPayload, suit);
-                    setSelectedPayload(null);
-                  }}
+                  onClick={() => handleFoundationClick(suit)}
                   title="Mover carta seleccionada"
                 >
                   {top ? (
@@ -1221,7 +1396,9 @@ const SolitaireGame = () => {
       <p className="text-sm text-gray-600">
         {foundationsDone
           ? 'Ganaste la partida. Animacion de caida activada.'
-          : 'Arrastra o toca para mover: selecciona carta y luego toca columna/fundacion. Doble clic auto-fundacion.'}
+          : autoFinishReady
+            ? 'Auto-completando partida...'
+            : 'Arrastra o toca para mover: selecciona carta y luego toca columna/fundacion. Doble clic auto-fundacion.'}
       </p>
     </div>
   );
@@ -1319,4 +1496,3 @@ const Games = () => {
 };
 
 export default Games;
-
