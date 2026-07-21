@@ -165,7 +165,7 @@ const AboutMe = ({ language }: AboutMeProps) => {
             <div className="mt-4 space-y-2.5 text-sm text-slate-200">
               <div className="flex items-start gap-2">
                 <Mail className="w-4 h-4 mt-0.5 text-blue-300" />
-                <span className="break-all">miguelangel.developer@gmail.com</span>
+                <span className="break-all">miguelangelnunez.developer@gmail.com</span>
               </div>
               <div className="flex items-start gap-2">
                 <PhoneCall className="w-4 h-4 mt-0.5 text-blue-300" />
